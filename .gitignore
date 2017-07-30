@@ -1,0 +1,8 @@
+build/
+*.class
+*.jar
+.idea/*
+*.sqlite
+gradlew
+gradlew.bat
+.gradle/
