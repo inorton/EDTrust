@@ -1,7 +1,9 @@
 package space.edhits.edtrust.data;
 
 import org.sqlite.SQLiteConnection;
+import space.edhits.edtrust.UnknownUser;
 
+import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,15 +15,11 @@ import java.util.UUID;
  */
 public class SQLiteUserProfileData implements UserProfileData {
 
-    private String url = "jdbc:sqlite:./edtrust.sqlite";
+    private String url;
     Connection connection;
 
     public SQLiteUserProfileData(String url) {
         this.url = url;
-        this.init();
-    }
-
-    public SQLiteUserProfileData() {
         this.init();
     }
 
@@ -92,6 +90,20 @@ public class SQLiteUserProfileData implements UserProfileData {
     }
 
 
+    @Override
+    public long getId(String email) throws UnknownUser {
+        try (PreparedStatement sth = prepareSelectGeneric(connection,
+                "userProfiles",
+                Arrays.asList("id"), "email", email)) {
+            ResultSet resultSet = sth.executeQuery();
+            if (resultSet.next()) {
+                return resultSet.getLong("id");
+            }
+        } catch (SQLException err ){
+            throw new RuntimeException(err);
+        }
+        throw new UnknownUser();
+    }
 
     @Override
     public String getApiKey(long userId) {
@@ -122,6 +134,22 @@ public class SQLiteUserProfileData implements UserProfileData {
             throw new RuntimeException(err);
         }
         return false;
+    }
+
+    @Override
+    public String getEmail(long userId) throws UnknownUser {
+
+        try (PreparedStatement sth = prepareSelectGeneric(connection,
+                "userProfiles",
+                Arrays.asList("email"), "id", Long.valueOf(userId))) {
+            ResultSet resultSet = sth.executeQuery();
+            if (resultSet.next()) {
+                return resultSet.getString("email");
+            }
+        } catch (SQLException err ){
+            throw new RuntimeException(err);
+        }
+        throw new UnknownUser();
     }
 
     @Override
@@ -162,9 +190,20 @@ public class SQLiteUserProfileData implements UserProfileData {
                 PreparedStatement sth = writer.prepareStatement(sql);
                 sth.setBoolean(1, adminStatus);
                 sth.setLong(2, userId);
+                sth.execute();
+                writer.commit();
             }
         } catch (SQLException err) {
             throw new RuntimeException(err);
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            this.connection.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }
