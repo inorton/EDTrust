@@ -13,36 +13,13 @@ import java.util.UUID;
 /**
  * Created by inb on 30/07/2017.
  */
-public class SQLiteUserProfileData implements UserProfileData {
-
-    private String url;
-    Connection connection;
+public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfileData {
 
     public SQLiteUserProfileData(String url) {
-        this.url = url;
-        this.init();
+        super(url);
     }
 
-    /**
-     * Get a connection set in transaction mode.
-     * @return
-     * @throws SQLException
-     */
-    private Connection getWriteConnection() throws SQLException {
-        Connection c = DriverManager.getConnection(this.url);
-        c.setAutoCommit(false);
-        return c;
-    }
-
-    protected void init() {
-        try {
-            connection = DriverManager.getConnection(this.url);
-            this.makeTables();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+    @Override
     protected void makeTables() throws SQLException {
         try (Statement sth = connection.createStatement()) {
             String profiles = new StringBuilder()
@@ -195,15 +172,6 @@ public class SQLiteUserProfileData implements UserProfileData {
             }
         } catch (SQLException err) {
             throw new RuntimeException(err);
-        }
-    }
-
-    @Override
-    public void close() throws IOException {
-        try {
-            this.connection.close();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 }

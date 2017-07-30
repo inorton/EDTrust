@@ -27,31 +27,18 @@ import static org.hamcrest.core.Is.is;
  * Unit tests for user profile data
  */
 @RunWith(JUnit4.class)
-public class UserProfileDataTests {
+public class UserProfileDataTests extends TestCommon {
 
-    private static Path dbfile = Paths.get(System.getProperty("user.dir"), "/test-users.sqlite");
-    private static String testUsersProfiles = "jdbc:sqlite:" + dbfile.toString();
-
-    private UserProfileData profileData;
+    protected UserProfileData profileData;
 
     @Before
-    public void clearDatabase() throws InterruptedException {
-        File file = dbfile.toFile();
-        if (file.exists()) {
-            while (!file.delete()) {
-                sleep(TimeUnit.MILLISECONDS.toMillis(10));
-            }
-        }
-        profileData = new SQLiteUserProfileData(testUsersProfiles);
+    public void setupProfileData() {
+        profileData = new SQLiteUserProfileData(testDb);
     }
 
     @After
     public void closeDatabase() throws IOException {
         profileData.close();
-    }
-
-    long makeUser(String email, UserProfileData users) {
-        return users.makeProfile(email);
     }
 
     @Test
