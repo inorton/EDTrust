@@ -1,8 +1,9 @@
 build/
 *.class
 *.jar
-.idea/*
+.idea/
 *.sqlite
 gradlew
 gradlew.bat
 .gradle/
+gradle/
