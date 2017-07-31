@@ -9,14 +9,19 @@ import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import space.edhits.edtrust.data.UserProfileData;
 
 /**
  * Very simple API key tests
  */
-@SpringBootTest
+@SpringBootTest(classes = {
+        ListServiceTestConfiguration.class,
+        ListServiceConfiguration.class,
+        ListServiceController.class})
 @RunWith(SpringRunner.class)
-@ComponentScan
 @RestClientTest(ListServiceController.class)
 public class BasicTests {
 
@@ -26,10 +31,24 @@ public class BasicTests {
     @Autowired
     private ListServiceController listService;
 
+    @Autowired
+    private UserProfileData users;
+
     @Test
-    public void testUnauthorizedApiKey() {
+    public void testUnauthorizedApiKey() throws UnknownUser {
         expected.expect(UnauthorizedApiKey.class);
         ContactRequest contactRequest = new ContactRequest();
         listService.check("invalid api key", contactRequest);
     }
+
+    @Test
+    public void testAuthorizedApiKey() throws UnknownUser {
+        ContactRequest contactRequest = new ContactRequest();
+
+        // make sure a random cmdr is not on our list
+        contactRequest.setCmdr(TestHelpers.randomString());
+        ResponseEntity<ContactResponse> check = listService.check(users.getApiKey(users.getId(TestHelpers.TEST_USER_EMAIL)),
+                contactRequest);
+    }
+
 }

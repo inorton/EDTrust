@@ -66,6 +66,21 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
         }
     }
 
+    @Override
+    public long getIdFromKey(String apikey) throws UnknownUser
+    {
+        try (PreparedStatement sth = prepareSelectGeneric(connection,
+                "userProfiles",
+                Arrays.asList("id"), "apikey", apikey)) {
+            ResultSet resultSet = sth.executeQuery();
+            if (resultSet.next()) {
+                return resultSet.getLong("id");
+            }
+        } catch (SQLException err ){
+            throw new RuntimeException(err);
+        }
+        throw new UnknownUser();
+    }
 
     @Override
     public long getId(String email) throws UnknownUser {

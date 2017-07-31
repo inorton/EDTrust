@@ -1,37 +1,28 @@
 package space.edhits.edtrust;
 
-/**
- * Given an API Key, identify the user and provide a means to check/append their lists
- */
+import space.edhits.edtrust.data.CmdrList;
+import space.edhits.edtrust.data.UserProfileData;
+
+
 public class UserApiContext {
 
-    private long defaultList;
-    private String cmdr;
+    UserProfileData users = null;
+    CmdrList lists = null;
+    long userId = 0;
+    boolean admin = false;
 
-    public void load(String cmdr) {
-        this.setCmdr(cmdr);
+    public void load(String email, UserProfileData userProfiles, CmdrList lists) throws UnknownUser {
+        this.users = userProfiles;
+        this.lists = lists;
+        userId = users.getId(email);
+        admin = users.getAdminStatus(userId);
     }
 
     public ContactResponse check(String cmdr) {
         ContactResponse contactResponse = new ContactResponse();
         contactResponse.setCmdr(cmdr);
+        contactResponse.setStatus(Constants.RESPONSE_STATUS_UNKNOWN);
 
         return contactResponse;
-    }
-
-    public long getDefaultList() {
-        return defaultList;
-    }
-
-    public void setDefaultList(long defaultList) {
-        this.defaultList = defaultList;
-    }
-
-    public String getCmdr() {
-        return cmdr;
-    }
-
-    public void setCmdr(String cmdr) {
-        this.cmdr = cmdr;
     }
 }

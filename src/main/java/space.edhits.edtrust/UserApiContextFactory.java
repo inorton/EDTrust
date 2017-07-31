@@ -13,11 +13,11 @@ public class UserApiContextFactory {
         this.resolver = resolver;
     }
 
-    public UserApiContext getUser(String apikey) {
-        String cmdr = resolver.getUser(apikey);
+    public UserApiContext getUser(String apikey) throws UnknownUser {
+        String email = resolver.getUser(apikey);
 
         UserApiContext user = new UserApiContext();
-        user.load(cmdr);
+        user.load(email, resolver.getUsers(), resolver.getLists());
 
         return user;
     }

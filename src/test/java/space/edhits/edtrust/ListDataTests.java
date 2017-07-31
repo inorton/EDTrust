@@ -1,7 +1,5 @@
 package space.edhits.edtrust;
 
-
-import org.apache.tomcat.util.bcel.Const;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

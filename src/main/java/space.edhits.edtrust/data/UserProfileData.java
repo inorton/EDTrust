@@ -12,6 +12,8 @@ public interface UserProfileData extends Closeable {
 
     long getId(String email) throws UnknownUser;
 
+    long getIdFromKey(String apikey) throws UnknownUser;
+
     Boolean getAdminStatus(long userId);
 
     String getEmail(long userId) throws UnknownUser;

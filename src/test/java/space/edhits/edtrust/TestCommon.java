@@ -18,11 +18,14 @@ import static java.lang.Thread.sleep;
  */
 public class TestCommon {
     private static Path dbfile = Paths.get(System.getProperty("user.dir"), "/test.sqlite");
-    protected static String testDb = "jdbc:sqlite:" + dbfile.toString();
-
+    public static String testDb = "jdbc:sqlite:" + dbfile.toString();
 
     @Before
     public void clearDatabase() throws InterruptedException {
+        clearDatabaseFile();
+    }
+
+    public static void clearDatabaseFile() throws InterruptedException {
         File file = dbfile.toFile();
         if (file.exists()) {
             int counter = 1000;
