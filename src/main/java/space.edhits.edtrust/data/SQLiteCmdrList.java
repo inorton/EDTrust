@@ -78,7 +78,28 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
 
     @Override
     public ArrayList<String> list(long listId, String hostileState, int offset, int limit) {
-        return null;
+        // select cmdrs.cmdr from cmdrLists INNER JOIN cmdrs
+        //   ON cmdrLists.cmdr = cmdrs.id WHERE hostility = "hostile";
+        try {
+            ArrayList<String> cmdrs = new ArrayList<>();
+            try (PreparedStatement sth = connection.prepareStatement(
+                    "SELECT cmdrs.cmdr FROM cmdrLists INNER JOIN" +
+                            " cmdrs ON cmdrLists.cmdr = cmdrs.id " +
+                            " WHERE cmdrLists.list == ? " +
+                            " AND cmdrLists.hostility == ? " +
+                            " ORDER BY cmdrs.cmdr")) {
+                sth.setLong(1, listId);
+                sth.setString(2, hostileState);
+                ResultSet resultSet = sth.executeQuery();
+
+                while (resultSet.next()) {
+                    cmdrs.add(resultSet.getString(1));
+                }
+            }
+            return cmdrs;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -150,7 +171,7 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
         long cmdrId = getCmdrId(cmdr);
 
         try (PreparedStatement sth = connection.prepareStatement(
-                "SELECT hostility FROM cmdrList " +
+                "SELECT hostility FROM cmdrLists " +
                     "WHERE list == ? AND cmdr == ?")) {
             sth.setLong(1, listId);
             sth.setLong(2, cmdrId);

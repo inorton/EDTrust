@@ -1,6 +1,7 @@
 package space.edhits.edtrust;
 
 
+import org.apache.tomcat.util.bcel.Const;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -116,15 +117,62 @@ public class ListDataTests extends TestCommon {
     }
 
     @Test
-    public void testAddNames() throws NameExists {
+    public void testAddRemoveNames() throws NameExists {
         long owernid = 1;
         long stuff = listData.createList(owernid, "stuff");
 
         listData.put(stuff, "fred", Constants.RESPONSE_STATUS_HOSTILE);
         listData.put(stuff, "george", Constants.RESPONSE_STATUS_HOSTILE);
         listData.put(stuff, "sandy", Constants.RESPONSE_STATUS_HOSTILE);
+        listData.put(stuff, "dave", Constants.RESPONSE_STATUS_FRIENDLY);
 
-        ArrayList<String> list = listData.list(stuff, Constants.RESPONSE_STATUS_HOSTILE, 0, 10);
-        assertThat(list.size(), is(3));
+        ArrayList<String> bad = listData.list(stuff, Constants.RESPONSE_STATUS_HOSTILE, 0, 10);
+        assertThat(bad.size(), is(3));
+
+        ArrayList<String> good = listData.list(stuff, Constants.RESPONSE_STATUS_FRIENDLY, 0, 10);
+        assertThat(good.size(), is(1));
+
+        // now delete one
+        listData.remove(stuff, "fred");
+        ArrayList<String> smallbad = listData.list(stuff, Constants.RESPONSE_STATUS_HOSTILE, 0, 10);
+        assertThat(smallbad.size(), is(2));
+    }
+
+    @Test
+    public void testGetHostile() throws NameExists {
+        long owernid = 1;
+        long stuff = listData.createList(owernid, "stuff");
+
+        listData.put(stuff, "fred", Constants.RESPONSE_STATUS_HOSTILE);
+        listData.put(stuff, "dave", Constants.RESPONSE_STATUS_FRIENDLY);
+
+        String fred = listData.getHostileState(stuff, "fred");
+        String dave = listData.getHostileState(stuff, "dave");
+
+        assertThat(fred, equalTo(Constants.RESPONSE_STATUS_HOSTILE));
+        assertThat(dave, equalTo(Constants.RESPONSE_STATUS_FRIENDLY));
+    }
+
+    @Test
+    public void testPublicLists() throws NameExists {
+        long owernid = 1;
+        long stuff = listData.createList(owernid, "stuff");
+        ArrayList<String> publicLists = listData.publicLists();
+        assertThat(publicLists.size(), is(0));
+        listData.updateListPublic(stuff, true);
+
+        ArrayList<String> publicLists2 = listData.publicLists();
+        assertThat(publicLists2.size(), is(1));
+    }
+
+    @Test
+    public void testGetListId() throws NameExists, UnknownList {
+        long owernid = 1;
+        long stuff = listData.createList(owernid, "stuff");
+        long found = listData.getList("stuff");
+        assertThat(found, is(stuff));
+
+        expected.expect(UnknownList.class);
+        listData.getList("nolist");
     }
 }
