@@ -173,4 +173,26 @@ public class ListDataTests extends TestCommon {
         expected.expect(UnknownList.class);
         listData.getList("nolist");
     }
+
+    @Test
+    public void testReadOnlyUsers() throws Exception {
+        long owernid = 1;
+        ArrayList<Long> readers;
+        long stuff = listData.createList(owernid, "stuff");
+
+
+        readers = listData.getReaders(stuff);
+        assertThat(readers.size(), is(0));
+
+        listData.addReader(stuff, 3);
+        listData.addReader(stuff, 4);
+        listData.addReader(stuff, 5);
+
+        readers = listData.getReaders(stuff);
+        assertThat(readers.size(), is(3));
+
+        listData.deleteReader(stuff, 5);
+        readers = listData.getReaders(stuff);
+        assertThat(readers.size(), is(2));
+    }
 }

@@ -30,6 +30,20 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
                     .append(" admin INTEGER )").toString();
             sth.execute(profiles);
         }
+        try (Statement sth = connection.createStatement()) {
+            String subs = new StringBuilder()
+                    .append("CREATE TABLE IF NOT EXISTS userSubscriptions (")
+                    .append(" user INTEGER, ")
+                    .append(" list INTEGER )").toString();
+            sth.execute(subs);
+        }
+        try (Statement sth = connection.createStatement()) {
+            String index = new StringBuilder()
+                    .append("CREATE INDEX IF NOT EXISTS I_userSubscriptions")
+                    .append(" ON userSubscriptions ")
+                    .append(" (user, list) ").toString();
+            sth.execute(index);
+        }
     }
 
     private static String makeSelectQuery(String from, List<String> cols, String where) {
@@ -187,6 +201,61 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
             }
         } catch (SQLException err) {
             throw new RuntimeException(err);
+        }
+    }
+
+    @Override
+    public ArrayList<Long> getSubscriptions(long userId) {
+        ArrayList<Long> found = new ArrayList<>();
+
+        try (PreparedStatement sth = prepareSelectGeneric(connection,
+                "userSubscriptions",
+                Arrays.asList("list"), "user", userId)) {
+            ResultSet resultSet = sth.executeQuery();
+            while (resultSet.next()) {
+                long list = resultSet.getLong("list");
+                found.add(list);
+            }
+            return found;
+        } catch (SQLException err ){
+            throw new RuntimeException(err);
+        }
+    }
+
+    @Override
+    public void addSubscription(long userId, long listId) {
+        try {
+            try (Connection writer = getWriteConnection()) {
+                String sql = new StringBuilder()
+                        .append("REPLACE INTO userSubscriptions ")
+                        .append(" (user, list) ")
+                        .append(" VALUES( ?, ?)").toString();
+                PreparedStatement sth = writer.prepareStatement(sql);
+                sth.setLong(1, userId);
+                sth.setLong(2, listId);
+                sth.execute();
+                writer.commit();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void removeSubscription(long userId, long listId) {
+        try {
+            try (Connection writer = getWriteConnection()) {
+                String sql = new StringBuilder()
+                        .append("DELETE FROM userSubscriptions ")
+                        .append("WHERE user == ? AND list == ?").toString();
+                PreparedStatement sth = writer.prepareStatement(sql);
+                sth.setLong(1, userId);
+                sth.setLong(2, listId);
+                sth.execute();
+                writer.commit();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }

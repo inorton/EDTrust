@@ -19,12 +19,10 @@ public class ListServiceController {
 
     @RequestMapping(value = "/check", method = RequestMethod.POST)
     public ResponseEntity<ContactResponse> check(@RequestHeader(value = "apikey", required = true) String apikey,
-                                                 @RequestBody ContactRequest contactRequest) throws UnknownUser {
+                                                 @RequestBody ContactRequest contactRequest) throws UnknownUser, UnknownList {
         UserApiContext user = contextFactory.getUser(apikey);
-
-
-        ContactResponse contactResponse = new ContactResponse();
-        return ResponseEntity.ok(contactResponse);
+        ContactResponse check = user.check(contactRequest.getCmdr());
+        return ResponseEntity.ok(check);
     }
 
 

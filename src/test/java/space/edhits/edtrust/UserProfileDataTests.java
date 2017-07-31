@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.Thread.sleep;
@@ -65,6 +66,24 @@ public class UserProfileDataTests extends TestCommon {
         assertThat(email, notNullValue());
         long gotid = profileData.getId(email);
         assertThat(gotid, is(userid));
+    }
+
+    @Test
+    public void CheckSubscriptions() {
+        long userid = makeUser(TestHelpers.randomEmail(), profileData);
+
+        ArrayList<Long> subscriptions = profileData.getSubscriptions(userid);
+        assertThat(subscriptions.size(), is(0));
+
+        profileData.addSubscription(userid, 1);
+        profileData.addSubscription(userid, 2);
+        profileData.addSubscription(userid, 3);
+        subscriptions = profileData.getSubscriptions(userid);
+        assertThat(subscriptions.size(), is(3));
+
+        profileData.removeSubscription(userid, 2);
+        subscriptions = profileData.getSubscriptions(userid);
+        assertThat(subscriptions.size(), is(2));
     }
 
 }

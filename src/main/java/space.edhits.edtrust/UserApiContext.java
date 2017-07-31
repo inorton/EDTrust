@@ -3,6 +3,8 @@ package space.edhits.edtrust;
 import space.edhits.edtrust.data.CmdrList;
 import space.edhits.edtrust.data.UserProfileData;
 
+import java.util.ArrayList;
+
 
 public class UserApiContext {
 
@@ -18,10 +20,43 @@ public class UserApiContext {
         admin = users.getAdminStatus(userId);
     }
 
-    public ContactResponse check(String cmdr) {
+    public ContactResponse check(String cmdr) throws UnknownList {
         ContactResponse contactResponse = new ContactResponse();
         contactResponse.setCmdr(cmdr);
         contactResponse.setStatus(Constants.RESPONSE_STATUS_UNKNOWN);
+
+        // check our own lists
+        ArrayList<String> owned = this.lists.lists(userId);
+        boolean found = false;
+        for (String name: owned) {
+            long listId = this.lists.getList(name);
+            String state = this.lists.getHostileState(listId, cmdr);
+            if (!state.equals(Constants.RESPONSE_STATUS_UNKNOWN)) {
+                contactResponse.setStatus(state);
+                found = true;
+                break;
+            }
+        }
+
+        // if not found, check our subscribed lists
+        if (!found) {
+            ArrayList<Long> subscriptions = this.users.getSubscriptions(userId);
+            for (Long listId: subscriptions) {
+                // is this public
+                boolean isAdmin = this.lists.getAdmin(listId, userId);
+                // or are we an admin for it?
+                boolean isPublic = this.lists.getListPublic(listId);
+                // or are we granted r/o access?
+                ArrayList<Long> readers = this.lists.getReaders(listId);
+                if (isAdmin || isPublic || readers.contains(listId)) {
+                    String state = this.lists.getHostileState(listId, cmdr);
+                    if (!state.equals(Constants.RESPONSE_STATUS_UNKNOWN)) {
+                        contactResponse.setStatus(state);
+                        break;
+                    }
+                }
+            }
+        }
 
         return contactResponse;
     }

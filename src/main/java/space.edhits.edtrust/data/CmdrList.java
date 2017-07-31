@@ -31,4 +31,8 @@ public interface CmdrList extends Closeable {
 
     boolean getListPublic(long listId);
     void updateListPublic(long listId, boolean isPublic);
+
+    ArrayList<Long> getReaders(long listId);
+    void addReader(long listId, long userId);
+    void deleteReader(long listId, long userId);
 }

@@ -67,6 +67,23 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
                     .append(" (list, cmdr) ").toString();
             sth.execute(index);
         }
+
+        try (Statement sth = connection.createStatement()) {
+            String table = new StringBuilder()
+                    .append("CREATE TABLE IF NOT EXISTS cmdrListReaders (")
+                    .append(" list INTEGER, ")
+                    .append(" user INTEGER) ").toString();
+            sth.execute(table);
+        }
+
+        try (Statement sth = connection.createStatement()) {
+            String index = new StringBuilder()
+                    .append("CREATE UNIQUE INDEX IF NOT EXISTS I_cmdrListReaders")
+                    .append(" ON cmdrListReaders ")
+                    .append(" (list, user) ").toString();
+            sth.execute(index);
+        }
+
         try (Statement sth = connection.createStatement()) {
             String index = new StringBuilder()
                     .append("CREATE INDEX IF NOT EXISTS I_cmdrLists_hostility")
@@ -458,6 +475,58 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
                     .append(" WHERE id == ?").toString());
             sth.setLong(2, listId);
             sth.setBoolean(1, isPublic);
+            sth.execute();
+            writer.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public ArrayList<Long> getReaders(long listId) {
+        ArrayList<Long> readers = new ArrayList<>();
+        try {
+            try (PreparedStatement sth = connection.prepareStatement(
+                    "SELECT user FROM cmdrListReaders " +
+                            " WHERE list == ? ")) {
+                sth.setLong(1, listId);
+                ResultSet resultSet = sth.executeQuery();
+
+                while (resultSet.next()) {
+                    readers.add (resultSet.getLong(1));
+                }
+            }
+            return readers;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void addReader(long listId, long userId) {
+        setReader(listId, userId, true);
+    }
+
+    @Override
+    public void deleteReader(long listId, long userId) {
+        setReader(listId, userId, false);
+    }
+
+    void setReader(long listId, long userId, boolean grant) {
+        try (Connection writer = getWriteConnection()) {
+
+            PreparedStatement sth;
+            if (grant) {
+                sth = writer.prepareStatement(new StringBuilder()
+                        .append("REPLACE INTO cmdrListReaders (list, user) ")
+                        .append(" VALUES( ?, ? )").toString());
+            } else {
+                sth = writer.prepareStatement(
+                        "DELETE FROM cmdrListReaders" +
+                                " WHERE list == ? AND user == ?");
+            }
+            sth.setLong(1, listId);
+            sth.setLong(2, userId);
             sth.execute();
             writer.commit();
         } catch (SQLException e) {
