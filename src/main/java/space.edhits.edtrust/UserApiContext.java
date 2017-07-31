@@ -20,6 +20,10 @@ public class UserApiContext {
         admin = users.getAdminStatus(userId);
     }
 
+    public ArrayList<String> getOwnedLists() {
+        return this.lists.lists(userId);
+    }
+
     public ContactResponse check(String cmdr) throws UnknownList {
         ContactResponse contactResponse = new ContactResponse();
         contactResponse.setCmdr(cmdr);

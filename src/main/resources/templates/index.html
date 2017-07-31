@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head th:replace="fragments/header :: head"></head>
+    <body>
+        <nav th:replace="fragments/header :: navbar"></nav>
+
+        <div class="container theme-showcase" role="main">
+            <div class="jumbotron">
+                <h1>ED:Verify</h1>
+
+                Welcome to ED:Verify.
+
+                <p th:if="${registered}">
+                    You are ready to create some lists!
+                </p>
+
+                <p th:if="!${registered}">
+                    You are not yet registered. You will need a valid Google account to continue.
+                    <p>
+                        <a href="/register" class="btn btn-primary">Register via Google</a>
+                    </p>
+                </p>
+            </div>
+        </div>
+
+    </body>
+</html>
