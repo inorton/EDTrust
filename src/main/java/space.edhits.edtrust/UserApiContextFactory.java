@@ -21,7 +21,7 @@ public class UserApiContextFactory {
     }
 
     public UserApiContext getUserByEmail(String email) throws UnknownUser {
-        UserApiContext user = new UserApiContext();
+        UserApiContext user = new UserApiContext(this);
         user.load(email, resolver.getUsers(), resolver.getLists());
         return user;
     }

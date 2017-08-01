@@ -52,6 +52,8 @@ public class WebUiController {
     }
 
     UserApiContext getRegistered(String email, Model model) throws UnknownUser {
+        if (email == null) throw new UnknownUser();
+
         UserApiContext user = getUserContext(email);
         model.addAttribute("registered", true);
         model.addAttribute("ownedLists", user.getOwnedLists());

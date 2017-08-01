@@ -7,11 +7,19 @@ import java.util.ArrayList;
 
 
 public class UserApiContext {
+    public UserApiContextFactory getFactory() {
+        return factory;
+    }
 
+    final UserApiContextFactory factory;
     UserProfileData users = null;
     CmdrList lists = null;
     long userId = 0;
     boolean admin = false;
+
+    public UserApiContext(UserApiContextFactory factory) {
+        this.factory = factory;
+    }
 
     public void load(String email, UserProfileData userProfiles, CmdrList lists) throws UnknownUser {
         this.users = userProfiles;

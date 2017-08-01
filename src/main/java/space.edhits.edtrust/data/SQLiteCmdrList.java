@@ -94,6 +94,26 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
     }
 
     @Override
+    public int getSize(long listId) {
+        try {
+            ArrayList<String> cmdrs = new ArrayList<>();
+            try (PreparedStatement sth = connection.prepareStatement(
+                    "SELECT count(*) FROM cmdrLists " +
+                            " WHERE cmdrLists.list == ? ")) {
+                sth.setLong(1, listId);
+                ResultSet resultSet = sth.executeQuery();
+
+                if (resultSet.next()) {
+                    return resultSet.getInt(1);
+                }
+            }
+            return 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public ArrayList<String> list(long listId, String hostileState, int offset, int limit) {
         // select cmdrs.cmdr from cmdrLists INNER JOIN cmdrs
         //   ON cmdrLists.cmdr = cmdrs.id WHERE hostility = "hostile";
@@ -241,6 +261,27 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
                 }
             }
             return false;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    @Override
+    public ArrayList<Long> getAdmins(long listId) {
+        ArrayList<Long> admins = new ArrayList<>();
+        try {
+            try (PreparedStatement sth = connection.prepareStatement(
+                    "SELECT user FROM cmdrListAdmins " +
+                            " WHERE list == ? ")) {
+                sth.setLong(1, listId);
+                ResultSet resultSet = sth.executeQuery();
+
+                while (resultSet.next()) {
+                    admins.add (resultSet.getLong(1));
+                }
+            }
+            return admins;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

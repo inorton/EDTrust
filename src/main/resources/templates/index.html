@@ -15,11 +15,11 @@
                 </p>
 
                 <p th:if="!${registered}">
-                    You are not yet registered.
+                    You are need to login
                     <div th:if="!${userFullName}">
-                        You will need a valid Google account to continue.
+                        You will need your Google account to continue.
                         <p>
-                            <a href="/register" class="btn btn-primary">Register via Google</a>
+                            <a href="/lists" class="btn btn-primary">Login via Google</a>
                         </p>
                     </div>
                 </p>
