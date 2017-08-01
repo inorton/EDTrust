@@ -31,5 +31,6 @@ public class Application extends WebSecurityConfigurerAdapter {
                     .permitAll()
                 .anyRequest()
                     .authenticated();
+
     }
 }
