@@ -428,6 +428,26 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
         return lists;
     }
 
+
+    @Override
+    public long getOwner(long listId) throws UnknownList {
+        try {
+            try (PreparedStatement sth = connection.prepareStatement(
+                    "SELECT owner FROM cmdrListInfo " +
+                            " WHERE id == ? ")) {
+                sth.setLong(1, listId);
+                ResultSet resultSet = sth.executeQuery();
+
+                if (resultSet.next()) {
+                    return (resultSet.getLong(1));
+                }
+            }
+            throw new UnknownList();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public String getListName(long listId) throws UnknownList {
         try {

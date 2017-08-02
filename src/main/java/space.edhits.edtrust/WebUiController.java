@@ -1,20 +1,21 @@
 package space.edhits.edtrust;
 
-import com.sun.org.apache.xpath.internal.operations.Mod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
+import space.edhits.edtrust.data.CmdrList;
 import space.edhits.edtrust.data.UserProfileData;
 
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+
+import static space.edhits.edtrust.Constants.RESPONSE_STATUS_FRIENDLY;
+import static space.edhits.edtrust.Constants.RESPONSE_STATUS_HOSTILE;
+import static space.edhits.edtrust.Constants.RESPONSE_STATUS_UNKNOWN;
 
 /**
  * Created by inb on 31/07/2017.
@@ -30,11 +31,14 @@ public class WebUiController {
     @Autowired
     protected UserProfileData users;
 
+    @Autowired
+    private CmdrList listData;
+
     String getUserEmail(Principal principal, Model model) {
         if (principal != null) {
             LinkedHashMap details = (LinkedHashMap) ((OAuth2Authentication) principal).getUserAuthentication().getDetails();
             if (details != null) {
-                model.addAttribute("userFullName", (String)details.getOrDefault("name", "no name"));
+                model.addAttribute("userFullName", (String) details.getOrDefault("name", "no name"));
                 String email = (String) details.getOrDefault("email", "no name");
                 model.addAttribute("email", email);
                 return email;
@@ -51,7 +55,7 @@ public class WebUiController {
         return userFactory.getUserByEmail(email);
     }
 
-    UserApiContext getRegistered(String email, Model model) throws UnknownUser {
+    UserApiContext getRegistered(String email, Model model) throws UnknownUser, UnknownList {
         if (email == null) throw new UnknownUser();
 
         UserApiContext user = getUserContext(email);
@@ -64,7 +68,7 @@ public class WebUiController {
         try {
             getRegistered(email, model);
             return true;
-        } catch (UnknownUser ignored) {
+        } catch (UnknownUser | UnknownList ignored) {
             return false;
         }
     }
@@ -91,9 +95,17 @@ public class WebUiController {
 
     @RequestMapping(value = "/lists", method = RequestMethod.POST)
     public String listsCreate(Principal principal, Model model,
-                              @RequestParam(value = "newListName", required = true) String newName) throws UnknownUser {
+                              @RequestParam(value = "newListName", required = true) String newName) throws UnknownUser, UnknownList {
         UserApiContext user = getRegistered(getUserEmail(principal, model), model);
         newName = Sanitizer.listName(newName);
+
+        if (!user.admin) {
+            if (user.getOwnedLists().size() > ListApiContext.MAX_LISTS_COUNT) {
+                addUserError(model, "Max lists limit reached");
+                return "lists";
+            }
+        }
+
         try {
             user.lists.createList(user.userId, newName);
         } catch (NameExists nameExists) {
@@ -113,6 +125,67 @@ public class WebUiController {
         return new RedirectView("/lists");
     }
 
+    @RequestMapping(value = "/list/{listName}", method = RequestMethod.GET)
+    public String viewList(Principal principal, Model model,
+                           @PathVariable("listName") String listName,
+                           @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset
+    ) throws UnknownUser, UnknownList {
+
+        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        ListApiContext list = new ListApiContext(user, user.lists.getList(listName));
+
+        model.addAttribute("list", list);
+        model.addAttribute("offset", offset);
+
+        model.addAttribute(Constants.RESPONSE_STATUS_HOSTILE, list.getItems(offset, 50, Constants.RESPONSE_STATUS_HOSTILE));
+        model.addAttribute(Constants.RESPONSE_STATUS_FRIENDLY, list.getItems(offset, 50, Constants.RESPONSE_STATUS_FRIENDLY));
+
+        return "list";
+    }
+
+    @RequestMapping(value = "/list/{listName}/update", method = RequestMethod.POST)
+    public RedirectView updateList(Principal principal, Model model,
+                                   @PathVariable("listName") String listName,
+                                   @ModelAttribute ListUpdateRequest update
+    ) throws UnknownUser, UnknownList, NameExists {
+        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        String newname = Sanitizer.listName(update.getName());
+
+        ListApiContext list = new ListApiContext(user, user.lists.getList(listName));
+        list.setPublic(user, update.getPublic());
+        list.setName(user, update.getName());
+        return new RedirectView("/list/" + newname);
+    }
+
+    @RequestMapping(value = "/list/{listName}/add", method = RequestMethod.POST)
+    public RedirectView putCmdrToList(Principal principal, Model model,
+                                      @PathVariable("listName") String listName,
+                                      @ModelAttribute ListEntryRequest entry
+    ) throws UnknownUser, UnknownList, NameExists {
+        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        String cmdr = Sanitizer.cmdrName(entry.getCmdr());
+        String hostility = Sanitizer.hostility(entry.getHostility());
+
+        ListApiContext list = new ListApiContext(user, user.lists.getList(listName));
+        list.addCmdr(user, cmdr, hostility);
+
+        return new RedirectView("/list/" + listName);
+    }
+
+    @RequestMapping(value = "/list/{listName}/remove", method = RequestMethod.POST)
+    public RedirectView delCmdrToList(Principal principal, Model model,
+                                      @PathVariable("listName") String listName,
+                                      @ModelAttribute ListEntryRequest entry
+    ) throws UnknownUser, UnknownList, NameExists {
+        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        String cmdr = Sanitizer.cmdrName(entry.getCmdr());
+        ListApiContext list = new ListApiContext(user, user.lists.getList(listName));
+        list.delCmdr(user, cmdr);
+
+        return new RedirectView("/list/" + listName);
+    }
+
+
     @RequestMapping(value = "/confirm-register", method = RequestMethod.GET)
     public RedirectView confirmRegister(Principal principal, Model model) {
         String email = getUserEmail(principal, model);
@@ -120,4 +193,60 @@ public class WebUiController {
         return new RedirectView("/");
     }
 
+    @RequestMapping(value = "/webcheck", method = RequestMethod.GET)
+    public String webCheck(Principal principal, Model model,
+                           @RequestParam(value = "public", required = false, defaultValue = "false") boolean checkPublic,
+                           @RequestParam(value = "cmdr", required = false) String cmdr) throws UnknownUser, UnknownList {
+
+        String email = getUserEmail(principal, model);
+        UserApiContext user = null;
+        if (email != null) {
+            user = getRegistered(email, model);
+        }
+
+        if (cmdr != null && cmdr.length() > 0) {
+            cmdr = Sanitizer.cmdrName(cmdr);
+
+            ArrayList<ListApiContext> checkLists = new ArrayList<>();
+
+            if (user != null) {
+                // check against a user's lists
+                ArrayList<ListApiContext> ownedLists = user.getOwnedLists();
+                checkLists.addAll(ownedLists);
+            }
+
+            if (checkPublic) {
+                ArrayList<String> publicLists = listData.publicLists();
+                for (String listName : publicLists) {
+                    long listId = listData.getList(listName);
+                    long listOwner = listData.getOwner(listId);
+                    ListApiContext listContext = new ListApiContext(userFactory.getUserByEmail(users.getEmail(listOwner)), listId);
+                    checkLists.add(listContext);
+                }
+            }
+
+            String state = RESPONSE_STATUS_UNKNOWN;
+
+            model.addAttribute("checkedCmdr", cmdr);
+            for (ListApiContext checkList : checkLists) {
+                String hostileState = checkList.getHostileState(cmdr);
+                if (hostileState != RESPONSE_STATUS_UNKNOWN) {
+                    state = hostileState;
+                    break;
+                }
+            }
+            model.addAttribute("alertClass", "alert alert-info");
+            if (state.equals(RESPONSE_STATUS_FRIENDLY)) {
+                model.addAttribute("alertClass", "alert alert-success");
+            } else {
+                if (state.equals(RESPONSE_STATUS_HOSTILE)) {
+                    model.addAttribute("alertClass", "alert alert-danger");
+                }
+            }
+            model.addAttribute("hostileState", state);
+            model.addAttribute("foundCmdr", true);
+        }
+
+        return "webcheck";
+    }
 }

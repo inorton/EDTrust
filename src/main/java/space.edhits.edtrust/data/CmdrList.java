@@ -18,7 +18,7 @@ public interface CmdrList extends Closeable {
     void put(long listId, String cmdr, String hostileState);
     void remove(long listId, String cmdr);
     String getHostileState(long listId, String cmdr);
-
+    long getOwner(long listId) throws UnknownList;
     void setAdmin(long listId, long userId, boolean isAdmin);
     boolean getAdmin(long listId, long userId);
     ArrayList<Long> getAdmins(long listId);

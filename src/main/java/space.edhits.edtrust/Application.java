@@ -25,6 +25,7 @@ public class Application extends WebSecurityConfigurerAdapter {
                     .antMatchers(
                             "/",
                             "/about",
+                            "/webcheck**",
                             "/check**",
                             "/static/**",
                             "/webjars/**")

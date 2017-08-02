@@ -28,8 +28,14 @@ public class UserApiContext {
         admin = users.getAdminStatus(userId);
     }
 
-    public ArrayList<String> getOwnedLists() {
-        return this.lists.lists(userId);
+    public ArrayList<ListApiContext> getOwnedLists() throws UnknownList {
+        ArrayList<ListApiContext> owned = new ArrayList<>();
+        for (String listName : this.lists.lists(this.userId)) {
+            ListApiContext listObj = new ListApiContext(this, this.lists.getList(listName));
+            owned.add(listObj);
+        }
+
+        return owned;
     }
 
     public ContactResponse check(String cmdr) throws UnknownList {
