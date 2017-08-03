@@ -249,4 +249,15 @@ public class WebUiController {
 
         return "webcheck";
     }
+
+    @RequestMapping(value = "/profile", method = RequestMethod.GET)
+    public String profile(Principal principal, Model model) throws UnknownUser {
+        String email = getUserEmail(principal, model);
+        if (checkRegistered(email, model)) {
+            UserApiContext user = getUserContext(email);
+            model.addAttribute("apikey", user.getApiKey());
+            return "profile";
+        }
+        return REGISTRATION_TEMPLATE;
+    }
 }

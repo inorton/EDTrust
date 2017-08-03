@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head th:replace="fragments/header :: head"></head>
+    <body>
+        <nav th:replace="fragments/header :: navbar"></nav>
+
+        <div class="container theme-showcase" role="main">
+            <div class="page-header">
+                <h1>Profile</h1>
+
+                Hi <span th:text="${userFullName}"></span>, this is your profile page.
+                <p>
+                Your EDMC ED:Trust API Key is:
+                </p>
+                <div>
+                    <input class="form-control" type="text" th:value="${apikey}"/>
+                </div>
+            </div>
+            <h2>Your Subscribed Lists:</h2>
+
+        </div>
+
+    </body>
+</html>
