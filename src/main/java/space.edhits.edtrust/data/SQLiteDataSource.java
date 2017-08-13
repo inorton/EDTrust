@@ -9,7 +9,7 @@ import java.sql.SQLException;
  */
 public abstract class SQLiteDataSource {
 
-    private String url;
+    private final String url;
     Connection connection;
 
     public SQLiteDataSource(String url) {

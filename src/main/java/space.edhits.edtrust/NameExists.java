@@ -6,7 +6,7 @@ public class NameExists extends Exception {
         return name;
     }
 
-    private String name;
+    private final String name;
 
     public NameExists(String name) {
         super();

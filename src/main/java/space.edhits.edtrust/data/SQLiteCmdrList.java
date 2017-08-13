@@ -18,12 +18,14 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
         super(url);
     }
 
-    private static String ADMIN_TABLE = "cmdrListAdmins";
-    private static String SUBSCRIBER_TABLE = "cmdrListReaders";
-    private static String BLOCKED_TABLE = "cmdrListBlocked";
-    private static String PENDING_TABLE = "cmdrListPending";
+    private static final String ADMIN_TABLE = "cmdrListAdmins";
+    private static final String SUBSCRIBER_TABLE = "cmdrListReaders";
+    private static final String BLOCKED_TABLE = "cmdrListBlocked";
+    private static final String PENDING_TABLE = "cmdrListPending";
 
-    private static String[] BOOLEAN_TABLES = new String[] {
+    private static final long BOOLEAN_TABLE_MAX = 100;
+
+    private static final String[] BOOLEAN_TABLES = new String[] {
             ADMIN_TABLE,
             SUBSCRIBER_TABLE,
             BLOCKED_TABLE,
@@ -231,11 +233,30 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
         }
     }
 
+    private void limitBooleanAccess(Connection conn, String tableName, long listId) throws SQLException {
+        try (PreparedStatement sth = conn.prepareStatement(
+                "SELECT count(user) FROM " + tableName + " WHERE list == ?")) {
+            sth.setLong(1, listId);
+
+            ResultSet resultSet = sth.executeQuery();
+            if (!resultSet.next()) {
+                return;
+            }
+            long accessCount = resultSet.getLong(1);
+
+            if (accessCount > BOOLEAN_TABLE_MAX) {
+                throw new RuntimeException(
+                        "max access list size exceeded, please delete an entry");
+            }
+        }
+    }
+
     private void setBooleanAccess(String tableName, long listId, long userId, boolean insert) {
         try (Connection writer = getWriteConnection()) {
 
             PreparedStatement sth;
             if (insert) {
+                limitBooleanAccess(writer, tableName, listId);
                 sth = writer.prepareStatement(new StringBuilder().append("REPLACE INTO ").append(tableName).append(" (list, user) ")
                         .append(" VALUES( ?, ? )").toString());
             } else {
@@ -612,6 +633,27 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
             sth.setBoolean(1, isPublic);
             sth.execute();
             writer.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public ArrayList<String> findList(String contains) {
+        try {
+            ArrayList<String> found = new ArrayList<>();
+            if (contains != null && contains.length() > 2) {
+                try (PreparedStatement sth = connection.prepareStatement(
+                        "SELECT name FROM cmdrListInfo " +
+                                " WHERE name LIKE ? ORDER BY name ASC")) {
+                    sth.setString(1, "%" + contains + "%");
+                    ResultSet resultSet = sth.executeQuery();
+                    while (resultSet.next()) {
+                        found.add(resultSet.getString(1));
+                    }
+                }
+            }
+            return found;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

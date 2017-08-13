@@ -16,8 +16,8 @@ import java.nio.file.Paths;
 @Configuration
 public class ListServiceConfiguration {
 
-    private static Path dbfile = Paths.get(System.getProperty("user.dir"), "/edtrust.sqlite");
-    protected static String edtrustDb = "jdbc:sqlite:" + dbfile.toString();
+    private static final Path dbfile = Paths.get(System.getProperty("user.dir"), "/edtrust.sqlite");
+    protected static final String edtrustDb = "jdbc:sqlite:" + dbfile.toString();
 
 
     @Bean

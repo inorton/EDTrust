@@ -13,7 +13,7 @@ import java.io.IOException;
 public abstract class IntegrationTestBase {
 
     @Rule
-    public ExpectedException expected = ExpectedException.none();
+    public final ExpectedException expected = ExpectedException.none();
 
     @Autowired
     protected ListServiceController listService;

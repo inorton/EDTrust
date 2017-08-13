@@ -27,7 +27,7 @@ import static org.hamcrest.core.Is.is;
 public class ListDataTests extends TestCommon {
 
     @Rule
-    public ExpectedException expected = ExpectedException.none();
+    public final ExpectedException expected = ExpectedException.none();
 
     protected CmdrList listData;
 

@@ -11,8 +11,8 @@ public class ListApiContext {
     public static final int MAX_LISTS_COUNT = 4;
     public static final int MAX_LIST_SIZE = 50;
 
-    long listId;
-    UserApiContext owner;
+    final long listId;
+    final UserApiContext owner;
     String name;
     boolean isPublic;
 
@@ -32,19 +32,30 @@ public class ListApiContext {
         return owner.lists.getListHidden(this.listId);
     }
 
-    public List<UserApiContext> getAdmins() throws UnknownUser {
-        ArrayList<UserApiContext> admins = new ArrayList<>();
-        ArrayList<Long> adminIds = owner.lists.getAdmins(this.listId);
-        for (long userId: adminIds) {
+    private List<UserApiContext> getUserContexts(ArrayList<Long> userIds) throws UnknownUser {
+        ArrayList<UserApiContext> usersCtxs = new ArrayList<>();
+        for (long userId: userIds) {
             String email = owner.users.getEmail(userId);
             UserApiContext adminUser = owner.getFactory().getUserByEmail(email);
-            admins.add(adminUser);
+            usersCtxs.add(adminUser);
         }
-        return admins;
+        return usersCtxs;
+    }
+
+    public List<UserApiContext> getAdmins() throws UnknownUser {
+        return getUserContexts(owner.lists.getAdmins(this.listId));
     }
 
     public List<UserApiContext> getPending() throws UnknownUser {
-        return null;
+        return getUserContexts(owner.lists.getPending(this.listId));
+    }
+
+    public List<UserApiContext> getSubscribers() throws UnknownUser {
+        return getUserContexts(owner.lists.getSubscribed(this.listId));
+    }
+
+    public List<UserApiContext> getBlocked() throws UnknownUser {
+        return getUserContexts(owner.lists.getBlocked(this.listId));
     }
 
     public List<String> getItems(int offset, int limit, String state) {
@@ -127,5 +138,9 @@ public class ListApiContext {
     public String getHostileState(String cmdr) {
         cmdr = Sanitizer.cmdrName(cmdr);
         return owner.lists.getHostileState(this.listId, cmdr);
+    }
+
+    public String getDescription() throws UnknownList {
+        return owner.lists.getListDescription(this.listId);
     }
 }

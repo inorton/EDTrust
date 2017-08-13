@@ -14,8 +14,8 @@ import static java.lang.Thread.sleep;
  * Created by inb on 30/07/2017.
  */
 public class TestCommon {
-    private static Path dbfile = Paths.get(System.getProperty("user.dir"), "/test.sqlite");
-    public static String testDb = "jdbc:sqlite:" + dbfile.toString();
+    private static final Path dbfile = Paths.get(System.getProperty("user.dir"), "/test.sqlite");
+    public static final String testDb = "jdbc:sqlite:" + dbfile.toString();
 
     @Before
     public void clearDatabase() throws InterruptedException {

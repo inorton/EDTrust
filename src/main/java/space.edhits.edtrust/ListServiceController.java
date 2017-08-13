@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(value = Constants.TRUST_SERVICE_BASE)
 public class ListServiceController {
 
-    UserApiContextFactory contextFactory;
+    final UserApiContextFactory contextFactory;
 
     public ListServiceController(@Autowired UserApiContextFactory contextFactory) {
         this.contextFactory = contextFactory;

@@ -142,6 +142,27 @@ public class WebUiController {
         return "list";
     }
 
+    @RequestMapping(value = "/find", method = RequestMethod.GET)
+    public String searchForLists(Principal principal, Model model,
+                                 @RequestParam(value = "contains", required = false) String name) throws UnknownList, UnknownUser {
+
+        // find public or non-hidden lists with this in the name
+        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        ArrayList<String> listNames = user.lists.findList(name);
+        ArrayList<ListApiContext> lists = new ArrayList();
+        for(String listName: listNames) {
+            long listId = user.lists.getList(listName);
+            long ownerId = user.lists.getOwner(listId);
+            String ownerEmail = user.users.getEmail(ownerId);
+            UserApiContext owner = userFactory.getUserByEmail(ownerEmail);
+            ListApiContext foundList = new ListApiContext(owner, user.lists.getList(listName));
+            lists.add(foundList);
+        }
+
+        model.addAttribute("found", lists);
+        return "find";
+    }
+
     @RequestMapping(value = "/list/{listName}/subscribers", method = RequestMethod.GET)
     public String viewSubscribers(Principal principal, Model model,
                            @PathVariable("listName") String listName,

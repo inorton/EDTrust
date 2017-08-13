@@ -5,7 +5,7 @@ package space.edhits.edtrust;
  */
 public class UserApiContextFactory {
 
-    ApiKeyResolver resolver;
+    final ApiKeyResolver resolver;
 
     public UserApiContextFactory(ApiKeyResolver resolver) {
         this.resolver = resolver;
