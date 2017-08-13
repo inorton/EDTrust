@@ -3,6 +3,7 @@ package space.edhits.edtrust.data;
 import space.edhits.edtrust.NameExists;
 import space.edhits.edtrust.UnknownList;
 
+import javax.xml.ws.soap.Addressing;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,6 +25,11 @@ public interface CmdrList extends Closeable {
     boolean getAdmin(long listId, long userId);
     ArrayList<Long> getAdmins(long listId);
 
+    ArrayList<Long> getSubscribed(long listId);
+    ArrayList<Long> getBlocked(long listId);
+    ArrayList<Long> getPending(long listId);
+    void updateListAccess(long listId, long userId, ListSubscription access);
+
     long createList(long owner, String name) throws NameExists;
     void updateListName(long listId, String name) throws NameExists;
     void updateListDescription(long listId, String desc);
@@ -37,8 +43,4 @@ public interface CmdrList extends Closeable {
 
     boolean getListHidden(long listId);
     void updateListHidden(long listId, boolean isPublic);
-
-    ArrayList<Long> getReaders(long listId);
-    void addReader(long listId, long userId);
-    void deleteReader(long listId, long userId);
 }

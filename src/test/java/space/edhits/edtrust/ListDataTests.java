@@ -8,6 +8,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import space.edhits.edtrust.data.CmdrList;
+import space.edhits.edtrust.data.ListSubscription;
 import space.edhits.edtrust.data.SQLiteCmdrList;
 
 import java.io.IOException;
@@ -200,18 +201,18 @@ public class ListDataTests extends TestCommon {
         long stuff = listData.createList(owernid, "stuff");
 
 
-        readers = listData.getReaders(stuff);
+        readers = listData.getSubscribed(stuff);
         assertThat(readers.size(), is(0));
 
-        listData.addReader(stuff, 3);
-        listData.addReader(stuff, 4);
-        listData.addReader(stuff, 5);
+        listData.updateListAccess(stuff, 3, ListSubscription.SUBSCRIBED);
+        listData.updateListAccess(stuff, 4, ListSubscription.SUBSCRIBED);
+        listData.updateListAccess(stuff, 5, ListSubscription.SUBSCRIBED);
 
-        readers = listData.getReaders(stuff);
+        readers = listData.getSubscribed(stuff);
         assertThat(readers.size(), is(3));
 
-        listData.deleteReader(stuff, 5);
-        readers = listData.getReaders(stuff);
+        listData.updateListAccess(stuff, 3, ListSubscription.FORGET);
+        readers = listData.getSubscribed(stuff);
         assertThat(readers.size(), is(2));
     }
 }

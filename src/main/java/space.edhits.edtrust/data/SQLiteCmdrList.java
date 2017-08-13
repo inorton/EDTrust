@@ -23,6 +23,18 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
         super(url);
     }
 
+    private static String ADMIN_TABLE = "cmdrListAdmins";
+    private static String SUBSCRIBER_TABLE = "cmdrListReaders";
+    private static String BLOCKED_TABLE = "cmdrListBlocked";
+    private static String PENDING_TABLE = "cmdrListPending";
+
+    private static String[] BOOLEAN_TABLES = new String[] {
+            ADMIN_TABLE,
+            SUBSCRIBER_TABLE,
+            BLOCKED_TABLE,
+            PENDING_TABLE
+    };
+
     @Override
     protected void makeTables() throws SQLException {
         try (Statement sth = connection.createStatement()) {
@@ -53,13 +65,12 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
                     .append(" hostility TEXT)").toString();
             sth.execute(table);
         }
-
         try (Statement sth = connection.createStatement()) {
-            String table = new StringBuilder()
-                    .append("CREATE TABLE IF NOT EXISTS cmdrListAdmins (")
-                    .append(" list INTEGER, ")
-                    .append(" user INTEGER) ").toString();
-            sth.execute(table);
+            String index = new StringBuilder()
+                    .append("CREATE INDEX IF NOT EXISTS I_cmdrLists_hostility")
+                    .append(" ON cmdrLists ")
+                    .append(" (hostility) ").toString();
+            sth.execute(index);
         }
 
         try (Statement sth = connection.createStatement()) {
@@ -70,29 +81,25 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
             sth.execute(index);
         }
 
-        try (Statement sth = connection.createStatement()) {
-            String table = new StringBuilder()
-                    .append("CREATE TABLE IF NOT EXISTS cmdrListReaders (")
-                    .append(" list INTEGER, ")
-                    .append(" user INTEGER) ").toString();
-            sth.execute(table);
+        /* common boolean access tables */
+    for (String tableName: BOOLEAN_TABLES) {
+            try (Statement sth = connection.createStatement()) {
+                String table = new StringBuilder()
+                        .append("CREATE TABLE IF NOT EXISTS " + tableName + " (")
+                        .append(" list INTEGER, ")
+                        .append(" user INTEGER) ").toString();
+                sth.execute(table);
+            }
+
+            try (Statement sth = connection.createStatement()) {
+                String index = new StringBuilder()
+                        .append("CREATE UNIQUE INDEX IF NOT EXISTS I_" + tableName)
+                        .append(" ON " + tableName + " ")
+                        .append(" (list, user) ").toString();
+                sth.execute(index);
+            }
         }
 
-        try (Statement sth = connection.createStatement()) {
-            String index = new StringBuilder()
-                    .append("CREATE UNIQUE INDEX IF NOT EXISTS I_cmdrListReaders")
-                    .append(" ON cmdrListReaders ")
-                    .append(" (list, user) ").toString();
-            sth.execute(index);
-        }
-
-        try (Statement sth = connection.createStatement()) {
-            String index = new StringBuilder()
-                    .append("CREATE INDEX IF NOT EXISTS I_cmdrLists_hostility")
-                    .append(" ON cmdrLists ")
-                    .append(" (hostility) ").toString();
-            sth.execute(index);
-        }
     }
 
     @Override
@@ -225,19 +232,18 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
         }
     }
 
-    @Override
-    public void setAdmin(long listId, long userId, boolean isAdmin) {
+    private void setBooleanAccess(String tableName, long listId, long userId, boolean insert) {
         try (Connection writer = getWriteConnection()) {
 
             PreparedStatement sth;
-            if (isAdmin) {
+            if (insert) {
                 sth = writer.prepareStatement(new StringBuilder()
-                        .append("REPLACE INTO cmdrListAdmins (list, user) ")
+                        .append("REPLACE INTO " + tableName+ " (list, user) ")
                         .append(" VALUES( ?, ? )").toString());
             } else {
                 sth = writer.prepareStatement(
-                        "DELETE FROM cmdrListAdmins" +
-                        " WHERE list == ? AND user == ?");
+                        "DELETE FROM " + tableName +
+                                " WHERE list == ? AND user == ?");
             }
             sth.setLong(1, listId);
             sth.setLong(2, userId);
@@ -248,16 +254,14 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
         }
     }
 
-    @Override
-    public boolean getAdmin(long listId, long userId) {
+    private boolean getBooleanAccess(String tableName, long listId, long userId) {
         try {
             try (PreparedStatement sth = connection.prepareStatement(
-                    "SELECT count(user) FROM cmdrListAdmins " +
+                    "SELECT count(user) FROM " + tableName +
                             " WHERE list == ? AND user == ?")) {
                 sth.setLong(1, listId);
                 sth.setLong(2, userId);
                 ResultSet resultSet = sth.executeQuery();
-
                 if (resultSet.next()) {
                     return (resultSet.getLong(1) == 1);
                 }
@@ -266,6 +270,36 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private ArrayList<Long> getBooleanAccessMembers(String tableName, long listId) {
+        ArrayList<Long> readers = new ArrayList<>();
+        try {
+            try (PreparedStatement sth = connection.prepareStatement(
+                    "SELECT user FROM " + tableName +
+                            " WHERE list == ? ")) {
+                sth.setLong(1, listId);
+                ResultSet resultSet = sth.executeQuery();
+
+                while (resultSet.next()) {
+                    readers.add (resultSet.getLong(1));
+                }
+            }
+            return readers;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    @Override
+    public void setAdmin(long listId, long userId, boolean isAdmin) {
+        setBooleanAccess(ADMIN_TABLE, listId, userId, isAdmin);
+    }
+
+    @Override
+    public boolean getAdmin(long listId, long userId) {
+        return getBooleanAccess(ADMIN_TABLE, listId, userId);
     }
 
 
@@ -331,17 +365,20 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
             sth.setLong(1, listId);
             sth.execute();
 
-            sth = writer.prepareStatement(new StringBuilder()
-                    .append("DELETE FROM cmdrListAdmins ")
-                    .append(" WHERE list == ?").toString());
-            sth.setLong(1, listId);
-            sth.execute();
 
             sth = writer.prepareStatement(new StringBuilder()
                     .append("DELETE FROM cmdrLists ")
                     .append(" WHERE list == ?").toString());
             sth.setLong(1, listId);
             sth.execute();
+
+            for (String tableName : BOOLEAN_TABLES) {
+                sth = writer.prepareStatement(new StringBuilder()
+                        .append("DELETE FROM " + tableName)
+                        .append(" WHERE list == ?").toString());
+                sth.setLong(1, listId);
+                sth.execute();
+            }
 
             writer.commit();
         } catch (SQLException e) {
@@ -584,54 +621,44 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
     }
 
     @Override
-    public ArrayList<Long> getReaders(long listId) {
-        ArrayList<Long> readers = new ArrayList<>();
-        try {
-            try (PreparedStatement sth = connection.prepareStatement(
-                    "SELECT user FROM cmdrListReaders " +
-                            " WHERE list == ? ")) {
-                sth.setLong(1, listId);
-                ResultSet resultSet = sth.executeQuery();
+    public ArrayList<Long> getSubscribed(long listId) {
+        return getBooleanAccessMembers(SUBSCRIBER_TABLE, listId);
+    }
 
-                while (resultSet.next()) {
-                    readers.add (resultSet.getLong(1));
-                }
-            }
-            return readers;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    @Override
+    public ArrayList<Long> getBlocked(long listId) {
+        return getBooleanAccessMembers(BLOCKED_TABLE, listId);
+    }
+
+    @Override
+    public ArrayList<Long> getPending(long listId) {
+        return getBooleanAccessMembers(PENDING_TABLE, listId);
+    }
+
+    @Override
+    public void updateListAccess(long listId, long userId, ListSubscription access) {
+        if (access == ListSubscription.SUBSCRIBED) {
+            setBooleanAccess(SUBSCRIBER_TABLE, listId, userId, true);
+
+            setBooleanAccess(BLOCKED_TABLE, listId, userId, false);
+            setBooleanAccess(PENDING_TABLE, listId, userId, false);
         }
-    }
+        if (access == ListSubscription.BLOCKED) {
+            setBooleanAccess(BLOCKED_TABLE, listId, userId, true);
 
-    @Override
-    public void addReader(long listId, long userId) {
-        setReader(listId, userId, true);
-    }
+            setBooleanAccess(SUBSCRIBER_TABLE, listId, userId, false);
+            setBooleanAccess(PENDING_TABLE, listId, userId, false);
+            setAdmin(listId, userId, false);
+        }
 
-    @Override
-    public void deleteReader(long listId, long userId) {
-        setReader(listId, userId, false);
-    }
+        if (access == ListSubscription.REQUESTED) {
+            setBooleanAccess(PENDING_TABLE, listId, userId, true);
+        }
 
-    void setReader(long listId, long userId, boolean grant) {
-        try (Connection writer = getWriteConnection()) {
-
-            PreparedStatement sth;
-            if (grant) {
-                sth = writer.prepareStatement(new StringBuilder()
-                        .append("REPLACE INTO cmdrListReaders (list, user) ")
-                        .append(" VALUES( ?, ? )").toString());
-            } else {
-                sth = writer.prepareStatement(
-                        "DELETE FROM cmdrListReaders" +
-                                " WHERE list == ? AND user == ?");
+        if (access == ListSubscription.FORGET) {
+            for(String tableName: BOOLEAN_TABLES) {
+                setBooleanAccess(tableName, listId, userId, false);
             }
-            sth.setLong(1, listId);
-            sth.setLong(2, userId);
-            sth.execute();
-            writer.commit();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 }

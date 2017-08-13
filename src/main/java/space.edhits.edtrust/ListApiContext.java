@@ -43,6 +43,10 @@ public class ListApiContext {
         return admins;
     }
 
+    public List<UserApiContext> getPending() throws UnknownUser {
+        return null;
+    }
+
     public List<String> getItems(int offset, int limit, String state) {
         return owner.lists.list(this.listId, state, offset, limit);
     }

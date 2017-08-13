@@ -12,6 +12,7 @@ import space.edhits.edtrust.data.UserProfileData;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import static space.edhits.edtrust.Constants.RESPONSE_STATUS_FRIENDLY;
 import static space.edhits.edtrust.Constants.RESPONSE_STATUS_HOSTILE;
@@ -141,6 +142,25 @@ public class WebUiController {
         model.addAttribute(Constants.RESPONSE_STATUS_FRIENDLY, list.getItems(offset, 50, Constants.RESPONSE_STATUS_FRIENDLY));
 
         return "list";
+    }
+
+    @RequestMapping(value = "/list/{listName}/subscribers", method = RequestMethod.GET)
+    public String viewSubscribers(Principal principal, Model model,
+                           @PathVariable("listName") String listName,
+                           @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset
+    ) throws UnknownUser, UnknownList {
+
+        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        ListApiContext list = new ListApiContext(user, user.lists.getList(listName));
+
+        model.addAttribute("list", list);
+
+        List<UserApiContext> admins = list.getAdmins();
+        model.addAttribute("admins", admins);
+
+
+
+        return "subscribers";
     }
 
     @RequestMapping(value = "/list/{listName}/update", method = RequestMethod.POST)

@@ -69,7 +69,7 @@ public class UserApiContext {
                 // or are we an admin for it?
                 boolean isPublic = this.lists.getListPublic(listId);
                 // or are we granted r/o access?
-                ArrayList<Long> readers = this.lists.getReaders(listId);
+                ArrayList<Long> readers = this.lists.getSubscribed(listId);
                 if (isAdmin || isPublic || readers.contains(listId)) {
                     String state = this.lists.getHostileState(listId, cmdr);
                     if (!state.equals(Constants.RESPONSE_STATUS_UNKNOWN)) {
