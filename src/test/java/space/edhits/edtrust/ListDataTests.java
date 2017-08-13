@@ -47,7 +47,7 @@ public class ListDataTests extends TestCommon {
         assertThat(list, greaterThan(new Long(0)));
         String name = listData.getListName(list);
         assertThat(name, is(equalTo("stuff")));
-
+        assertThat(listData.getOwner(list), is(owernid));
         ArrayList<String> lists = listData.lists(owernid);
         assertThat(lists.size(), is(equalTo(1)));
     }
@@ -95,10 +95,13 @@ public class ListDataTests extends TestCommon {
         assertThat(listData.getAdmin(stuff, adminid), is(false));
 
         listData.setAdmin(stuff, adminid, true);
+        assertThat(listData.getAdmins(stuff).size(), is(1));
         assertThat(listData.getAdmin(stuff, adminid), is(true));
 
         listData.setAdmin(stuff, adminid, false);
+        assertThat(listData.getAdmins(stuff).size(), is(0));
         assertThat(listData.getAdmin(stuff, adminid), is(false));
+
     }
 
     @Test
@@ -115,6 +118,19 @@ public class ListDataTests extends TestCommon {
     }
 
     @Test
+    public void testSetHidden() throws NameExists {
+        long owernid = 1;
+        long stuff = listData.createList(owernid, "stuff");
+        assertThat(listData.getListHidden(stuff), is(false));
+
+        listData.updateListHidden(stuff, true);
+        assertThat(listData.getListHidden(stuff), is(true));
+
+        listData.updateListHidden(stuff, false);
+        assertThat(listData.getListHidden(stuff), is(false));
+    }
+
+    @Test
     public void testAddRemoveNames() throws NameExists {
         long owernid = 1;
         long stuff = listData.createList(owernid, "stuff");
@@ -123,9 +139,11 @@ public class ListDataTests extends TestCommon {
         listData.put(stuff, "george", Constants.RESPONSE_STATUS_HOSTILE);
         listData.put(stuff, "sandy", Constants.RESPONSE_STATUS_HOSTILE);
         listData.put(stuff, "dave", Constants.RESPONSE_STATUS_FRIENDLY);
+        assertThat(listData.getSize(stuff), is (4));
 
         ArrayList<String> bad = listData.list(stuff, Constants.RESPONSE_STATUS_HOSTILE, 0, 10);
         assertThat(bad.size(), is(3));
+
 
         ArrayList<String> good = listData.list(stuff, Constants.RESPONSE_STATUS_FRIENDLY, 0, 10);
         assertThat(good.size(), is(1));
@@ -133,6 +151,7 @@ public class ListDataTests extends TestCommon {
         // now delete one
         listData.remove(stuff, "fred");
         ArrayList<String> smallbad = listData.list(stuff, Constants.RESPONSE_STATUS_HOSTILE, 0, 10);
+        assertThat(listData.getSize(stuff), is (3));
         assertThat(smallbad.size(), is(2));
     }
 
