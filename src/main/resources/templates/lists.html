@@ -21,7 +21,7 @@
                                        th:value="${_csrf.token}" />
 
                                 <input class="form-control" placeholder="Enter a new list name.." type="text" name="newListName"/>
-                                <button type="submit" class="btn">Create</button>
+                                <button type="submit" class="btn btn-primary">Create New List</button>
                                 <span th:text="${userError}" style="color: red; "></span>
                             </form>
                         </td>
@@ -51,7 +51,7 @@
                                 <span th:if="${list.public}"
                                       data-toggle="tooltip" data-placement="left" title="This list is public"
                                       class="glyphicon glyphicon-globe"></span>
-                                <button class="btn" type="submit">
+                                <button class="btn btn-danger" type="submit">
                                     <span class="glyphicon glyphicon-remove-circle"></span>
                                 </button>
                             </form>

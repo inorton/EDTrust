@@ -81,7 +81,7 @@ public class WebUiController {
 
     @RequestMapping(value = "/about", method = RequestMethod.GET)
     public String about(Principal principal, Model model) {
-        getUserEmail(principal, model);
+        checkRegistered(getUserEmail(principal, model), model);
         return "about";
     }
 
