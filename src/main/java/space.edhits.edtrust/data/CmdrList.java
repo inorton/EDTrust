@@ -5,6 +5,7 @@ import space.edhits.edtrust.UnknownList;
 
 import java.io.Closeable;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Query or update a list
@@ -33,6 +34,9 @@ public interface CmdrList extends Closeable {
 
     boolean getListPublic(long listId);
     void updateListPublic(long listId, boolean isPublic);
+
+    boolean getListHidden(long listId);
+    void updateListHidden(long listId, boolean isPublic);
 
     ArrayList<Long> getReaders(long listId);
     void addReader(long listId, long userId);

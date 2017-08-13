@@ -11,6 +11,7 @@ import space.edhits.edtrust.UnknownList;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.UUID;
 
 /**
@@ -31,6 +32,7 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
                     .append(" name TEXT UNIQUE, ")
                     .append(" description TEXT, ")
                     .append(" owner INTEGER, ")
+                    .append(" hidden INTEGER, ")
                     .append(" public INTEGER)").toString();
             sth.execute(table);
         }
@@ -487,6 +489,25 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
     }
 
     @Override
+    public boolean getListHidden(long listId) {
+        try {
+            try (PreparedStatement sth = connection.prepareStatement(
+                    "SELECT hidden FROM cmdrListInfo " +
+                            " WHERE id == ? ")) {
+                sth.setLong(1, listId);
+                ResultSet resultSet = sth.executeQuery();
+
+                if (resultSet.next()) {
+                    return (resultSet.getBoolean(1));
+                }
+            }
+            return false;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public boolean getListPublic(long listId) {
         try {
             try (PreparedStatement sth = connection.prepareStatement(
@@ -519,6 +540,25 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
                 }
             }
             throw new UnknownList();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void updateListHidden(long listId, boolean isHidden)
+    {
+        try (Connection writer = getWriteConnection()) {
+
+            PreparedStatement sth;
+            sth = writer.prepareStatement(new StringBuilder()
+                    .append("UPDATE cmdrListInfo ")
+                    .append(" SET hidden = ? ")
+                    .append(" WHERE id == ?").toString());
+            sth.setLong(2, listId);
+            sth.setBoolean(1, isHidden);
+            sth.execute();
+            writer.commit();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

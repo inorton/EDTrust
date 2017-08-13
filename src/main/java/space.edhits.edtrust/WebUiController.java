@@ -152,7 +152,15 @@ public class WebUiController {
         String newname = Sanitizer.listName(update.getName());
 
         ListApiContext list = new ListApiContext(user, user.lists.getList(listName));
-        list.setPublic(user, update.getPublic());
+
+        list.setHidden(user, update.getHidden());
+        // hidden lists arent public
+        if (update.getHidden()) {
+            list.setPublic(user, false);
+        } else {
+            list.setPublic(user, update.getPublic());
+        }
+
         list.setName(user, update.getName());
         return new RedirectView("/list/" + newname);
     }

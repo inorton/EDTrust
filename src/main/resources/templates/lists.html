@@ -44,6 +44,10 @@
                                        th:name="${_csrf.parameterName}"
                                        th:value="${_csrf.token}" />
 
+                                <span th:if="${list.hidden}"
+                                      data-toggle="tooltip" data-placement="left" title="This list is Hidden"
+                                      class="glyphicon glyphicon-eye-close"></span>
+
                                 <span th:if="${list.public}"
                                       data-toggle="tooltip" data-placement="left" title="This list is public"
                                       class="glyphicon glyphicon-globe"></span>

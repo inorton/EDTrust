@@ -28,6 +28,10 @@ public class ListApiContext {
         return owner.lists.getListPublic(this.listId);
     }
 
+    public boolean getHidden() {
+        return owner.lists.getListHidden(this.listId);
+    }
+
     public List<UserApiContext> getAdmins() throws UnknownUser {
         ArrayList<UserApiContext> admins = new ArrayList<>();
         ArrayList<Long> adminIds = owner.lists.getAdmins(this.listId);
@@ -79,6 +83,14 @@ public class ListApiContext {
         if (isPublic != this.getPublic()) {
             if (canModify(user)) {
                 this.owner.lists.updateListPublic(this.listId, isPublic);
+            }
+        }
+    }
+
+    public void setHidden(UserApiContext user, boolean isHidden) throws UnknownUser {
+        if (isHidden != this.getHidden()) {
+            if (canModify(user)) {
+                this.owner.lists.updateListHidden(this.listId, isHidden);
             }
         }
     }

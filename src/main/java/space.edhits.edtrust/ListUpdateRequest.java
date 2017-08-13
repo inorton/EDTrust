@@ -3,6 +3,11 @@ package space.edhits.edtrust;
 public class ListUpdateRequest {
     private boolean isPublic;
     private String name;
+    private boolean isHidden;
+
+    public boolean getHidden() { return isHidden; }
+
+    public void setHidden(boolean hidden) { isHidden = hidden; }
 
     public boolean getPublic() {
         return isPublic;
