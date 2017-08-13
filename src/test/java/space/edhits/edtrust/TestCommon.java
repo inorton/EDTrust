@@ -1,12 +1,9 @@
 package space.edhits.edtrust;
 
-import org.junit.After;
 import org.junit.Before;
-import space.edhits.edtrust.data.SQLiteUserProfileData;
 import space.edhits.edtrust.data.UserProfileData;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;

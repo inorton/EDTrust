@@ -3,10 +3,8 @@ package space.edhits.edtrust.data;
 import space.edhits.edtrust.NameExists;
 import space.edhits.edtrust.UnknownList;
 
-import javax.xml.ws.soap.Addressing;
 import java.io.Closeable;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * Query or update a list

@@ -14,9 +14,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import static space.edhits.edtrust.Constants.RESPONSE_STATUS_FRIENDLY;
-import static space.edhits.edtrust.Constants.RESPONSE_STATUS_HOSTILE;
-import static space.edhits.edtrust.Constants.RESPONSE_STATUS_UNKNOWN;
+import static space.edhits.edtrust.Constants.*;
 
 /**
  * Created by inb on 31/07/2017.
@@ -39,7 +37,7 @@ public class WebUiController {
         if (principal != null) {
             LinkedHashMap details = (LinkedHashMap) ((OAuth2Authentication) principal).getUserAuthentication().getDetails();
             if (details != null) {
-                model.addAttribute("userFullName", (String) details.getOrDefault("name", "no name"));
+                model.addAttribute("userFullName", details.getOrDefault("name", "no name"));
                 String email = (String) details.getOrDefault("email", "no name");
                 model.addAttribute("email", email);
                 return email;
@@ -258,7 +256,7 @@ public class WebUiController {
             model.addAttribute("checkedCmdr", cmdr);
             for (ListApiContext checkList : checkLists) {
                 String hostileState = checkList.getHostileState(cmdr);
-                if (hostileState != RESPONSE_STATUS_UNKNOWN) {
+                if (!hostileState.equals(RESPONSE_STATUS_UNKNOWN)) {
                     state = hostileState;
                     break;
                 }

@@ -1,7 +1,5 @@
 package space.edhits.edtrust;
 
-import org.apache.tomcat.jni.Time;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,14 +8,9 @@ import org.junit.runners.JUnit4;
 import space.edhits.edtrust.data.SQLiteUserProfileData;
 import space.edhits.edtrust.data.UserProfileData;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
 
-import static java.lang.Thread.sleep;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;

@@ -1,18 +1,13 @@
 package space.edhits.edtrust.data;
 
-import org.apache.tomcat.util.bcel.Const;
 import org.sqlite.SQLiteErrorCode;
 import org.sqlite.SQLiteException;
 import space.edhits.edtrust.Constants;
 import space.edhits.edtrust.NameExists;
-import space.edhits.edtrust.UnknownCmdr;
 import space.edhits.edtrust.UnknownList;
 
-import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.UUID;
 
 /**
  * Created by inb on 30/07/2017.
@@ -85,7 +80,9 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
     for (String tableName: BOOLEAN_TABLES) {
             try (Statement sth = connection.createStatement()) {
                 String table = new StringBuilder()
-                        .append("CREATE TABLE IF NOT EXISTS " + tableName + " (")
+                        .append("CREATE TABLE IF NOT EXISTS ")
+                        .append(tableName)
+                        .append(" (")
                         .append(" list INTEGER, ")
                         .append(" user INTEGER) ").toString();
                 sth.execute(table);
@@ -93,8 +90,10 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
 
             try (Statement sth = connection.createStatement()) {
                 String index = new StringBuilder()
-                        .append("CREATE UNIQUE INDEX IF NOT EXISTS I_" + tableName)
-                        .append(" ON " + tableName + " ")
+                        .append("CREATE UNIQUE INDEX IF NOT EXISTS I_")
+                        .append(tableName)
+                        .append(" ON ")
+                        .append(tableName)
                         .append(" (list, user) ").toString();
                 sth.execute(index);
             }
@@ -237,8 +236,7 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
 
             PreparedStatement sth;
             if (insert) {
-                sth = writer.prepareStatement(new StringBuilder()
-                        .append("REPLACE INTO " + tableName+ " (list, user) ")
+                sth = writer.prepareStatement(new StringBuilder().append("REPLACE INTO ").append(tableName).append(" (list, user) ")
                         .append(" VALUES( ?, ? )").toString());
             } else {
                 sth = writer.prepareStatement(
@@ -373,8 +371,7 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
             sth.execute();
 
             for (String tableName : BOOLEAN_TABLES) {
-                sth = writer.prepareStatement(new StringBuilder()
-                        .append("DELETE FROM " + tableName)
+                sth = writer.prepareStatement(new StringBuilder().append("DELETE FROM ").append(tableName)
                         .append(" WHERE list == ?").toString());
                 sth.setLong(1, listId);
                 sth.execute();

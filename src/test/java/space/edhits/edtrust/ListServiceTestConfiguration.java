@@ -1,20 +1,12 @@
 package space.edhits.edtrust;
 
-import org.apache.tomcat.util.bcel.Const;
-import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import space.edhits.edtrust.data.CmdrList;
 import space.edhits.edtrust.data.SQLiteCmdrList;
 import space.edhits.edtrust.data.SQLiteUserProfileData;
 import space.edhits.edtrust.data.UserProfileData;
-
-import java.lang.annotation.RetentionPolicy;
-import java.util.HashMap;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.isNotNull;
-import static org.mockito.Mockito.when;
 
 /**
  * Beans for tests

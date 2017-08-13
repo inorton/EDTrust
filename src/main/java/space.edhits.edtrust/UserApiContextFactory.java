@@ -1,9 +1,5 @@
 package space.edhits.edtrust;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.ArrayList;
-
 /**
  * Get User API Contexts
  */

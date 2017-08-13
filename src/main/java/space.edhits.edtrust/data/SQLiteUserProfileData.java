@@ -1,12 +1,10 @@
 package space.edhits.edtrust.data;
 
-import org.sqlite.SQLiteConnection;
 import space.edhits.edtrust.UnknownUser;
 
-import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -85,7 +83,7 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
     {
         try (PreparedStatement sth = prepareSelectGeneric(connection,
                 "userProfiles",
-                Arrays.asList("id"), "apikey", apikey)) {
+                Collections.singletonList("id"), "apikey", apikey)) {
             ResultSet resultSet = sth.executeQuery();
             if (resultSet.next()) {
                 return resultSet.getLong("id");
@@ -100,7 +98,7 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
     public long getId(String email) throws UnknownUser {
         try (PreparedStatement sth = prepareSelectGeneric(connection,
                 "userProfiles",
-                Arrays.asList("id"), "email", email)) {
+                Collections.singletonList("id"), "email", email)) {
             ResultSet resultSet = sth.executeQuery();
             if (resultSet.next()) {
                 return resultSet.getLong("id");
@@ -115,7 +113,7 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
     public String getApiKey(long userId) {
         try (PreparedStatement sth = prepareSelectGeneric(connection,
                 "userProfiles",
-                Arrays.asList("apikey"), "id", userId)) {
+                Collections.singletonList("apikey"), "id", userId)) {
             ResultSet resultSet = sth.executeQuery();
             if (resultSet.next()) {
                 return resultSet.getString("apikey");
@@ -131,7 +129,7 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
 
         try (PreparedStatement sth = prepareSelectGeneric(connection,
                 "userProfiles",
-                Arrays.asList("admin"), "id", Long.valueOf(userId))) {
+                Collections.singletonList("admin"), "id", Long.valueOf(userId))) {
             ResultSet resultSet = sth.executeQuery();
             if (resultSet.next()) {
                 return resultSet.getBoolean("admin");
@@ -147,7 +145,7 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
 
         try (PreparedStatement sth = prepareSelectGeneric(connection,
                 "userProfiles",
-                Arrays.asList("email"), "id", Long.valueOf(userId))) {
+                Collections.singletonList("email"), "id", Long.valueOf(userId))) {
             ResultSet resultSet = sth.executeQuery();
             if (resultSet.next()) {
                 return resultSet.getString("email");
@@ -210,7 +208,7 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
 
         try (PreparedStatement sth = prepareSelectGeneric(connection,
                 "userSubscriptions",
-                Arrays.asList("list"), "user", userId)) {
+                Collections.singletonList("list"), "user", userId)) {
             ResultSet resultSet = sth.executeQuery();
             while (resultSet.next()) {
                 long list = resultSet.getLong("list");
