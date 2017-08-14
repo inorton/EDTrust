@@ -1,5 +1,8 @@
 package space.edhits.edtrust;
 
+import space.edhits.edtrust.data.CmdrList;
+import space.edhits.edtrust.data.ListSubscription;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,12 +19,30 @@ public class ListApiContext {
     String name;
     boolean isPublic;
 
+    public UserApiContext getViewer() {
+        return viewer;
+    }
+
+    public void setViewer(UserApiContext viewer) {
+        this.viewer = viewer;
+    }
+
+    private UserApiContext viewer;
+
     public UserApiContext getOwner() {
         return owner;
     }
 
     public String getName() throws UnknownList {
         return owner.lists.getListName(this.listId);
+    }
+
+    public boolean getViewerCanSubscribe() {
+        if (viewer != null) {
+            ListSubscription listReadAccess = owner.lists.getListReadAccess(this.listId, viewer.userId);
+            return listReadAccess == ListSubscription.UNKNOWN;
+        }
+        return false;
     }
 
     public boolean getPublic() {
@@ -71,6 +92,10 @@ public class ListApiContext {
         this.name = name;
         this.isPublic = isPublic;
         this.listId = listId;
+    }
+
+    public ListSubscription getSubscriberState(UserApiContext user) {
+        return user.lists.getListReadAccess(this.listId, user.userId);
     }
 
     boolean isListAdmin(UserApiContext user) throws UnknownUser {
@@ -142,5 +167,17 @@ public class ListApiContext {
 
     public String getDescription() throws UnknownList {
         return owner.lists.getListDescription(this.listId);
+    }
+
+    public static ArrayList<ListApiContext> getLists(UserApiContextFactory userFactory, CmdrList lists, ArrayList<Long> listIds) throws UnknownList, UnknownUser {
+
+        ArrayList<ListApiContext> listCtxts = new ArrayList<>();
+
+        for (long listId : listIds) {
+            UserApiContext owner = userFactory.getUserById(lists.getOwner(listId));
+            listCtxts.add(new ListApiContext(owner, listId));
+        }
+
+        return listCtxts;
     }
 }

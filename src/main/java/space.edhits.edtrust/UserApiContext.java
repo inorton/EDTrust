@@ -62,7 +62,7 @@ public class UserApiContext {
 
         // if not found, check our subscribed lists
         if (!found) {
-            ArrayList<Long> subscriptions = this.users.getSubscriptions(userId);
+            ArrayList<Long> subscriptions = this.users.getActiveSubscriptions(userId);
             for (Long listId: subscriptions) {
                 // is this public
                 boolean isAdmin = this.lists.getAdmin(listId, userId);

@@ -32,7 +32,7 @@ public class ListServiceTestConfiguration {
     @Primary
     public CmdrList testCmdrList(UserProfileData users) throws Exception {
         SQLiteCmdrList lists = new SQLiteCmdrList(TestCommon.testDb);
-
+        users.init(lists);
         // make a small list for the test user
         long user = users.getId(TestHelpers.TEST_USER_EMAIL);
         long baddies = lists.createList(user, TestHelpers.TEST_USER_LIST);

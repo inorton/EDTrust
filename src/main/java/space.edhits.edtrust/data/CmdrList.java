@@ -10,8 +10,10 @@ import java.util.ArrayList;
  * Query or update a list
  */
 public interface CmdrList extends Closeable {
+
     ArrayList<String> lists(long ownerId);
     ArrayList<String> publicLists();
+
     long getList(String name) throws UnknownList;
     int getSize(long listId);
     ArrayList<String> list(long listId, String hostileState, int offset, int limit);
@@ -30,7 +32,11 @@ public interface CmdrList extends Closeable {
     ArrayList<Long> getSubscribed(long listId);
     ArrayList<Long> getBlocked(long listId);
     ArrayList<Long> getPending(long listId);
+
+    ArrayList<Long> getUserAccessList(long userId, ListSubscription access);
+
     void updateListAccess(long listId, long userId, ListSubscription access);
+    ListSubscription getListReadAccess(long listId, long userId);
 
     long createList(long owner, String name) throws NameExists;
     void updateListName(long listId, String name) throws NameExists;

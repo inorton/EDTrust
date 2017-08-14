@@ -7,6 +7,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 import space.edhits.edtrust.data.CmdrList;
+import space.edhits.edtrust.data.ListSubscription;
 import space.edhits.edtrust.data.UserProfileData;
 
 import java.security.Principal;
@@ -156,7 +157,10 @@ public class WebUiController {
             String ownerEmail = user.users.getEmail(ownerId);
             UserApiContext owner = userFactory.getUserByEmail(ownerEmail);
             ListApiContext foundList = new ListApiContext(owner, user.lists.getList(listName));
-            lists.add(foundList);
+            foundList.setViewer(user);
+            if (foundList.getViewerCanSubscribe()) {
+                lists.add(foundList);
+            }
         }
 
         model.addAttribute("found", lists);
@@ -177,9 +181,43 @@ public class WebUiController {
         List<UserApiContext> admins = list.getAdmins();
         model.addAttribute("admins", admins);
 
+        List<UserApiContext> pending = list.getPending();
+        model.addAttribute("pendingSubscribers", pending);
 
+        List<UserApiContext> subscribers = list.getSubscribers();
+        model.addAttribute("subscribers", subscribers);
+
+        List<UserApiContext> blcoked = list.getBlocked();
+        model.addAttribute("blocked", blcoked);
 
         return "subscribers";
+    }
+
+    @RequestMapping(value = "/list/{listName}/subscribe", method = RequestMethod.GET)
+    public RedirectView requestSubscription(Principal principal, Model model,
+                                  @PathVariable("listName") String listName,
+                                  @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset
+    ) throws UnknownUser, UnknownList {
+
+        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        long listId = user.lists.getList(listName);
+        long listOwner = listData.getOwner(listId);
+        UserApiContext owner = userFactory.getUserById(listOwner);
+        ListApiContext list = new ListApiContext(owner, listId);
+        List<UserApiContext> admins = list.getAdmins();
+
+        if (list.canModify(user)) {
+            // we are an admin, subscribe ourself
+            user.lists.updateListAccess(list.listId, user.userId, ListSubscription.SUBSCRIBED);
+        } else {
+            // if we are not blocked or subscribed, add to pending
+            ListSubscription subscriberState = list.getSubscriberState(user);
+            if (subscriberState == ListSubscription.UNKNOWN) {
+                user.lists.updateListAccess(list.listId, user.userId, ListSubscription.REQUESTED);
+            }
+        }
+
+        return new RedirectView("/profile");
     }
 
     @RequestMapping(value = "/list/{listName}/update", method = RequestMethod.POST)
@@ -298,11 +336,27 @@ public class WebUiController {
     }
 
     @RequestMapping(value = "/profile", method = RequestMethod.GET)
-    public String profile(Principal principal, Model model) throws UnknownUser {
+    public String profile(Principal principal, Model model) throws UnknownUser, UnknownList {
         String email = getUserEmail(principal, model);
         if (checkRegistered(email, model)) {
             UserApiContext user = getUserContext(email);
             model.addAttribute("apikey", user.getApiKey());
+
+            ArrayList<ListApiContext> active = ListApiContext.getLists(
+                    userFactory, listData, users.getActiveSubscriptions(user.userId));
+            model.addAttribute("active", active);
+
+
+            ArrayList<ListApiContext> subscribed = ListApiContext.getLists(
+                    userFactory, listData,
+                    listData.getUserAccessList(user.userId, ListSubscription.SUBSCRIBED));
+            model.addAttribute("subscribed", subscribed);
+
+            ArrayList<ListApiContext> pending = ListApiContext.getLists(
+                    userFactory, listData,
+                    listData.getUserAccessList(user.userId, ListSubscription.REQUESTED));
+            model.addAttribute("pending", pending);
+
             return "profile";
         }
         return REGISTRATION_TEMPLATE;

@@ -16,7 +16,22 @@
                     <input class="form-control" type="text" th:value="${apikey}"/>
                 </div>
             </div>
-            <h2>Your Subscribed Lists:</h2>
+            <h1> Subscriptions</h1>
+
+            <h4>Active Subscriptions</h4>
+
+
+            <h4>Pending Subscription Requests:</h4>
+
+            <ul th:each="list: ${pending}">
+                <li th:text="${list.name}"></li>
+            </ul>
+
+            <h4>Approved Subscription Requests:</h4>
+
+            <ul th:each="list: ${subscribed}">
+                <li th:text="${list.name}"></li>
+            </ul>
 
         </div>
 

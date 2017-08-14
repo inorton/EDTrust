@@ -36,7 +36,9 @@ public class ListServiceConfiguration {
     }
 
     @Bean
-    public CmdrList cmdrList() {
-        return new SQLiteCmdrList(edtrustDb);
+    public CmdrList cmdrList(UserProfileData profiles) {
+        SQLiteCmdrList cmdrLists = new SQLiteCmdrList(edtrustDb);
+        profiles.init(cmdrLists);
+        return cmdrLists;
     }
 }

@@ -11,9 +11,12 @@ public class UserApiContextFactory {
         this.resolver = resolver;
     }
 
+    public UserApiContext getUserById(long userId) throws UnknownUser {
+        return this.getUserByEmail(resolver.getUserById(userId));
+    }
+
     public UserApiContext getUser(String apikey) throws UnknownUser {
-        String email = resolver.getUser(apikey);
-        return this.getUserByEmail(email);
+        return this.getUserByEmail(resolver.getUser(apikey));
     }
 
     public UserApiContext getUserByEmail(String email) throws UnknownUser {

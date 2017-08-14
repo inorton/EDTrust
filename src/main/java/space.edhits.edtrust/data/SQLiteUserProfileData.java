@@ -17,6 +17,13 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
         super(url);
     }
 
+    CmdrList lists = null;
+
+    @Override
+    public void init(CmdrList lists) {
+        this.lists = lists;
+    }
+
     @Override
     protected void makeTables() throws SQLException {
         try (Statement sth = connection.createStatement()) {
@@ -203,7 +210,7 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
     }
 
     @Override
-    public ArrayList<Long> getSubscriptions(long userId) {
+    public ArrayList<Long> getActiveSubscriptions(long userId) {
         ArrayList<Long> found = new ArrayList<>();
 
         try (PreparedStatement sth = prepareSelectGeneric(connection,
@@ -221,8 +228,13 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
     }
 
     @Override
-    public void addSubscription(long userId, long listId) {
+    public void activateSubscription(long userId, long listId) {
         try {
+            // only do this if the user is subscribed
+            ListSubscription listReadAccess = this.lists.getListReadAccess(listId, userId);
+            if (listReadAccess == ListSubscription.SUBSCRIBED)
+                return;
+
             try (Connection writer = getWriteConnection()) {
                 String sql = new StringBuilder()
                         .append("REPLACE INTO userSubscriptions ")
@@ -240,7 +252,7 @@ public class SQLiteUserProfileData extends SQLiteDataSource implements UserProfi
     }
 
     @Override
-    public void removeSubscription(long userId, long listId) {
+    public void deactivateSubscription(long userId, long listId) {
         try {
             try (Connection writer = getWriteConnection()) {
                 String sql = new StringBuilder()

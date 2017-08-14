@@ -5,6 +5,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import space.edhits.edtrust.data.CmdrList;
+import space.edhits.edtrust.data.SQLiteCmdrList;
 import space.edhits.edtrust.data.SQLiteUserProfileData;
 import space.edhits.edtrust.data.UserProfileData;
 
@@ -24,15 +26,19 @@ import static org.hamcrest.core.Is.is;
 public class UserProfileDataTests extends TestCommon {
 
     protected UserProfileData profileData;
+    protected CmdrList listData;
 
     @Before
     public void setupProfileData() {
+        listData = new SQLiteCmdrList(testDb);
         profileData = new SQLiteUserProfileData(testDb);
+        profileData.init(listData);
     }
 
     @After
     public void closeDatabase() throws IOException {
         profileData.close();
+        listData.close();
     }
 
     @Test
@@ -65,17 +71,17 @@ public class UserProfileDataTests extends TestCommon {
     public void CheckSubscriptions() {
         long userid = makeUser(TestHelpers.randomEmail(), profileData);
 
-        ArrayList<Long> subscriptions = profileData.getSubscriptions(userid);
+        ArrayList<Long> subscriptions = profileData.getActiveSubscriptions(userid);
         assertThat(subscriptions.size(), is(0));
 
-        profileData.addSubscription(userid, 1);
-        profileData.addSubscription(userid, 2);
-        profileData.addSubscription(userid, 3);
-        subscriptions = profileData.getSubscriptions(userid);
+        profileData.activateSubscription(userid, 1);
+        profileData.activateSubscription(userid, 2);
+        profileData.activateSubscription(userid, 3);
+        subscriptions = profileData.getActiveSubscriptions(userid);
         assertThat(subscriptions.size(), is(3));
 
-        profileData.removeSubscription(userid, 2);
-        subscriptions = profileData.getSubscriptions(userid);
+        profileData.deactivateSubscription(userid, 2);
+        subscriptions = profileData.getActiveSubscriptions(userid);
         assertThat(subscriptions.size(), is(2));
     }
 

@@ -20,8 +20,15 @@ public class ApiKeyResolver {
      */
     public String getUser(String apikey) {
         try {
-            long id = users.getIdFromKey(apikey);
-            return users.getEmail(id);
+            return getUserById(users.getIdFromKey(apikey));
+        } catch (UnknownUser unknownUser) {
+            throw new UnauthorizedApiKey();
+        }
+    }
+
+    public String getUserById(long userId) {
+        try {
+            return users.getEmail(userId);
         } catch (UnknownUser unknownUser) {
             throw new UnauthorizedApiKey();
         }

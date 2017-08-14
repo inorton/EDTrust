@@ -273,6 +273,25 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
         }
     }
 
+    private ArrayList<Long> getBooleanUsers(String tableName, long userId) {
+        ArrayList<Long> lists = new ArrayList<>();
+        try {
+            try (PreparedStatement sth = connection.prepareStatement(
+                    "SELECT list FROM " + tableName +
+                            " WHERE user == ? ")) {
+                sth.setLong(1, userId);
+                ResultSet resultSet = sth.executeQuery();
+
+                while (resultSet.next()) {
+                    lists.add (resultSet.getLong(1));
+                }
+            }
+            return lists;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private boolean getBooleanAccess(String tableName, long listId, long userId) {
         try {
             try (PreparedStatement sth = connection.prepareStatement(
@@ -645,9 +664,10 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
             if (contains != null && contains.length() > 2) {
                 try (PreparedStatement sth = connection.prepareStatement(
                         "SELECT name FROM cmdrListInfo " +
-                                " WHERE name LIKE ?  AND public == ? ORDER BY name ASC")) {
+                                " WHERE name LIKE ?  AND public == ? AND hidden == ? ORDER BY name ASC")) {
                     sth.setString(1, "%" + contains + "%");
                     sth.setBoolean(2, true);
+                    sth.setBoolean(3, false);
                     ResultSet resultSet = sth.executeQuery();
                     while (resultSet.next()) {
                         found.add(resultSet.getString(1));
@@ -673,6 +693,39 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
     @Override
     public ArrayList<Long> getPending(long listId) {
         return getBooleanAccessMembers(PENDING_TABLE, listId);
+    }
+
+    /**
+     * Get the listst the given user has access set to.
+     * @param userId
+     * @param access
+     * @return
+     */
+    @Override
+    public ArrayList<Long> getUserAccessList(long userId, ListSubscription access) {
+        if (access == ListSubscription.REQUESTED)
+            return getBooleanUsers(PENDING_TABLE, userId);
+        if (access == ListSubscription.BLOCKED)
+            return getBooleanUsers(BLOCKED_TABLE, userId);
+        if (access == ListSubscription.SUBSCRIBED)
+            return  getBooleanUsers(SUBSCRIBER_TABLE, userId);
+
+        return new ArrayList<>();
+    }
+
+    @Override
+    public ListSubscription getListReadAccess(long listId, long userId) {
+
+        if (getBooleanAccess(BLOCKED_TABLE, listId, userId))
+            return ListSubscription.BLOCKED;
+
+        if (getBooleanAccess(PENDING_TABLE, listId, userId))
+            return ListSubscription.REQUESTED;
+
+        if (getBooleanAccess(SUBSCRIBER_TABLE, listId, userId))
+            return ListSubscription.SUBSCRIBED;
+
+        return ListSubscription.UNKNOWN;
     }
 
     @Override
