@@ -20,14 +20,20 @@
                     <div class="form-group">
                         <label for="listHidden" class="col-sm-2 control-label">Hidden</label>
                         <div class="col-sm-10">
-                            <input type="checkbox" id="listHidden" name="hidden" th:checked="${list.hidden}"/> - If ticked users will not be able to search for this list. Hidden lists are by definition non-public lists.
+                            <input type="checkbox" id="listHidden" name="hidden" th:checked="${list.hidden}"/>
+                            - If ticked users will not be able to search for this list. Hidden lists are by definition non-public lists.
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="listPublic" class="col-sm-2 control-label">Public</label>
                         <div class="col-sm-10">
-                            <input type="checkbox" id="listPublic" name="public" th:checked="${list.public}"/> - If ticked other users can check a name against this list (but they will not be able to see all the names)<br/> If your list is non-public, users will have to request a access.
+                            <span th:if="${user.admin}">
+                                <input type="checkbox" id="listPublic" name="public" th:checked="${list.public}"/>
+
+                            </span>
+                            <span th:if="${!user.admin}" th:text="${list.public}"></span>
+                            - If (Admin privs only) ticked other users can check a name against this list (but they will not be able to see all the names)<br/> If your list is non-public, users will have to request a access.
                         </div>
                     </div>
                     <div class="form-group">

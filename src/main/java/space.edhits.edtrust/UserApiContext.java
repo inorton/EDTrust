@@ -17,6 +17,10 @@ public class UserApiContext {
     long userId = 0;
     boolean admin = false;
 
+    public boolean getAdmin() {
+        return admin;
+    }
+
     public String getApiKey() {
         return this.users.getApiKey(this.userId);
     }

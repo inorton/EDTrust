@@ -59,6 +59,7 @@ public class WebUiController {
         if (email == null) throw new UnknownUser();
 
         UserApiContext user = getUserContext(email);
+        model.addAttribute("user", user);
         model.addAttribute("registered", true);
         model.addAttribute("ownedLists", user.getOwnedLists());
         return user;
@@ -235,7 +236,9 @@ public class WebUiController {
         if (update.getHidden()) {
             list.setPublic(user, false);
         } else {
-            list.setPublic(user, update.getPublic());
+            if (user.admin) { // only let admin users set the public state
+                list.setPublic(user, update.getPublic());
+            }
         }
 
         list.setName(user, update.getName());
