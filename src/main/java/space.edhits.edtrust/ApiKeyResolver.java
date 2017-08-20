@@ -37,7 +37,6 @@ public class ApiKeyResolver {
     public CmdrList getLists(){
         return this.lists;
     }
-
     public UserProfileData getUsers() {
         return this.users;
     }

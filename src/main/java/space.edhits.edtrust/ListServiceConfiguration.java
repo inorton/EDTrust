@@ -41,4 +41,14 @@ public class ListServiceConfiguration {
         profiles.init(cmdrLists);
         return cmdrLists;
     }
+
+    @Bean
+    public ListApiContextFactory listApiContextFactory(
+            UserApiContextFactory userFactory,
+            CmdrList listData,
+            UserProfileData userData) {
+        ListApiContextFactory factory = new ListApiContextFactory(userFactory, listData, userData);
+        userFactory.setListFactory(factory);
+        return factory;
+    }
 }

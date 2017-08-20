@@ -12,8 +12,9 @@ public class UserApiContext {
     }
 
     final UserApiContextFactory factory;
-    UserProfileData users = null;
-    CmdrList lists = null;
+    final CmdrList lists;
+    private UserProfileData users = null;
+
     long userId = 0;
     boolean admin = false;
 
@@ -21,26 +22,30 @@ public class UserApiContext {
         return admin;
     }
 
+    public UserProfileData getUsers(){
+        return users;
+    }
+
+
     public String getApiKey() {
         return this.users.getApiKey(this.userId);
     }
 
     public UserApiContext(UserApiContextFactory factory) {
+        this.lists = factory.getResolver().getLists();
         this.factory = factory;
     }
 
     public void load(String email, UserProfileData userProfiles, CmdrList lists) throws UnknownUser {
         this.users = userProfiles;
-        this.lists = lists;
         userId = users.getId(email);
         admin = users.getAdminStatus(userId);
     }
 
-    public ArrayList<ListApiContext> getOwnedLists() throws UnknownList {
+    public ArrayList<ListApiContext> getOwnedLists() throws UnknownList, UnknownUser {
         ArrayList<ListApiContext> owned = new ArrayList<>();
-        for (String listName : this.lists.lists(this.userId)) {
-            ListApiContext listObj = new ListApiContext(this, this.lists.getList(listName));
-            owned.add(listObj);
+        for (String listName :  lists.lists(this.userId)) {
+            owned.add(factory.getListFactory().getList(listName));
         }
 
         return owned;

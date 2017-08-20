@@ -1,6 +1,5 @@
 package space.edhits.edtrust;
 
-import space.edhits.edtrust.data.CmdrList;
 import space.edhits.edtrust.data.ListSubscription;
 
 import java.util.ArrayList;
@@ -15,9 +14,19 @@ public class ListApiContext {
     public static final int MAX_LIST_SIZE = 50;
 
     final long listId;
-    final UserApiContext owner;
+    final ListApiContextFactory factory;
     String name;
     boolean isPublic;
+
+    UserApiContext owner;
+
+    public ListApiContext(ListApiContextFactory factory, UserApiContext owner, long listId) {
+        this.owner = owner;
+        this.name = name;
+        this.isPublic = isPublic;
+        this.listId = listId;
+        this.factory = factory;
+    }
 
     public UserApiContext getViewer() {
         return viewer;
@@ -34,29 +43,39 @@ public class ListApiContext {
     }
 
     public String getName() throws UnknownList {
-        return owner.lists.getListName(this.listId);
+        return factory.getLists().getListName(this.listId);
     }
 
     public boolean getViewerCanSubscribe() {
         if (viewer != null) {
-            ListSubscription listReadAccess = owner.lists.getListReadAccess(this.listId, viewer.userId);
-            return listReadAccess == ListSubscription.UNKNOWN;
+            ListSubscription listReadAccess = factory.getLists().getListReadAccess(this.listId, viewer.userId);
+
+            if (listReadAccess == ListSubscription.BLOCKED) {
+                return false;
+            }
+
+            if (listReadAccess == ListSubscription.SUBSCRIBED) {
+                return false;
+            }
+
+            return true;
         }
-        return false;
+        // bug
+        throw new RuntimeException("no viewer set");
     }
 
     public boolean getPublic() {
-        return owner.lists.getListPublic(this.listId);
+        return factory.getLists().getListPublic(this.listId);
     }
 
     public boolean getHidden() {
-        return owner.lists.getListHidden(this.listId);
+        return factory.getLists().getListHidden(this.listId);
     }
 
     private List<UserApiContext> getUserContexts(ArrayList<Long> userIds) throws UnknownUser {
         ArrayList<UserApiContext> usersCtxs = new ArrayList<>();
         for (long userId: userIds) {
-            String email = owner.users.getEmail(userId);
+            String email = factory.getUsers().getEmail(userId);
             UserApiContext adminUser = owner.getFactory().getUserByEmail(email);
             usersCtxs.add(adminUser);
         }
@@ -64,38 +83,32 @@ public class ListApiContext {
     }
 
     public List<UserApiContext> getAdmins() throws UnknownUser {
-        return getUserContexts(owner.lists.getAdmins(this.listId));
+        return getUserContexts(factory.getLists().getAdmins(this.listId));
     }
 
     public List<UserApiContext> getPending() throws UnknownUser {
-        return getUserContexts(owner.lists.getPending(this.listId));
+        return getUserContexts(factory.getLists().getPending(this.listId));
     }
 
     public List<UserApiContext> getSubscribers() throws UnknownUser {
-        return getUserContexts(owner.lists.getSubscribed(this.listId));
+        return getUserContexts(factory.getLists().getSubscribed(this.listId));
     }
 
     public List<UserApiContext> getBlocked() throws UnknownUser {
-        return getUserContexts(owner.lists.getBlocked(this.listId));
+        return getUserContexts(factory.getLists().getBlocked(this.listId));
     }
 
     public List<String> getItems(int offset, int limit, String state) {
-        return owner.lists.list(this.listId, state, offset, limit);
+        return factory.getLists().list(this.listId, state, offset, limit);
     }
 
     public int getSize() {
-        return owner.lists.getSize(this.listId);
+        return factory.getLists().getSize(this.listId);
     }
 
-    public ListApiContext(UserApiContext owner, long listId) {
-        this.owner = owner;
-        this.name = name;
-        this.isPublic = isPublic;
-        this.listId = listId;
-    }
 
     public ListSubscription getSubscriberState(UserApiContext user) {
-        return user.lists.getListReadAccess(this.listId, user.userId);
+        return factory.getLists().getListReadAccess(this.listId, user.userId);
     }
 
     boolean isListAdmin(UserApiContext user) throws UnknownUser {
@@ -122,7 +135,7 @@ public class ListApiContext {
     public void setPublic(UserApiContext user, boolean isPublic) throws UnknownUser {
         if (isPublic != this.getPublic()) {
             if (canModify(user)) {
-                this.owner.lists.updateListPublic(this.listId, isPublic);
+                factory.getLists().updateListPublic(this.listId, isPublic);
             }
         }
     }
@@ -130,7 +143,7 @@ public class ListApiContext {
     public void setHidden(UserApiContext user, boolean isHidden) throws UnknownUser {
         if (isHidden != this.getHidden()) {
             if (canModify(user)) {
-                this.owner.lists.updateListHidden(this.listId, isHidden);
+                factory.getLists().updateListHidden(this.listId, isHidden);
             }
         }
     }
@@ -139,7 +152,7 @@ public class ListApiContext {
         newname = Sanitizer.listName(newname);
         if (!newname.equals(this.getName())) {
             if (canModify(user)) {
-                this.owner.lists.updateListName(this.listId, newname);
+                factory.getLists().updateListName(this.listId, newname);
             }
         }
     }
@@ -148,7 +161,7 @@ public class ListApiContext {
         cmdr = Sanitizer.cmdrName(cmdr);
         if (canModify(user)) {
             if ((this.getSize() < MAX_LIST_SIZE) || isListAdmin(user)) {
-                this.owner.lists.put(listId, cmdr, hostility);
+                factory.getLists().put(listId, cmdr, hostility);
             }
         }
     }
@@ -156,28 +169,17 @@ public class ListApiContext {
     public void delCmdr(UserApiContext user, String cmdr) throws UnknownUser {
         cmdr = Sanitizer.cmdrName(cmdr);
         if (canModify(user)) {
-            this.owner.lists.remove(listId, cmdr);
+            factory.getLists().remove(listId, cmdr);
         }
     }
 
     public String getHostileState(String cmdr) {
         cmdr = Sanitizer.cmdrName(cmdr);
-        return owner.lists.getHostileState(this.listId, cmdr);
+        return factory.getLists().getHostileState(this.listId, cmdr);
     }
 
     public String getDescription() throws UnknownList {
-        return owner.lists.getListDescription(this.listId);
+        return factory.getLists().getListDescription(this.listId);
     }
 
-    public static ArrayList<ListApiContext> getLists(UserApiContextFactory userFactory, CmdrList lists, ArrayList<Long> listIds) throws UnknownList, UnknownUser {
-
-        ArrayList<ListApiContext> listCtxts = new ArrayList<>();
-
-        for (long listId : listIds) {
-            UserApiContext owner = userFactory.getUserById(lists.getOwner(listId));
-            listCtxts.add(new ListApiContext(owner, listId));
-        }
-
-        return listCtxts;
-    }
 }

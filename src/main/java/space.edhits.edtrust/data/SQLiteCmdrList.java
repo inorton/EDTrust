@@ -664,10 +664,9 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
             if (contains != null && contains.length() > 2) {
                 try (PreparedStatement sth = connection.prepareStatement(
                         "SELECT name FROM cmdrListInfo " +
-                                " WHERE name LIKE ?  AND public == ? AND hidden == ? ORDER BY name ASC")) {
+                                " WHERE name LIKE ?  AND hidden != ? ORDER BY name ASC")) {
                     sth.setString(1, "%" + contains + "%");
                     sth.setBoolean(2, true);
-                    sth.setBoolean(3, false);
                     ResultSet resultSet = sth.executeQuery();
                     while (resultSet.next()) {
                         found.add(resultSet.getString(1));

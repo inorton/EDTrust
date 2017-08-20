@@ -32,7 +32,11 @@ public class WebUiController {
     protected UserProfileData users;
 
     @Autowired
-    private CmdrList listData;
+    private CmdrList lists;
+
+    @Autowired
+    private ListApiContextFactory listFactory;
+
 
     String getUserEmail(Principal principal, Model model) {
         if (principal != null) {
@@ -108,7 +112,7 @@ public class WebUiController {
         }
 
         try {
-            user.lists.createList(user.userId, newName);
+            lists.createList(user.userId, newName);
         } catch (NameExists nameExists) {
             addUserError(model, "that name is not allowed or already exists.");
         }
@@ -122,7 +126,7 @@ public class WebUiController {
     public RedirectView deleteList(Principal principal, Model model,
                                    @PathVariable("listName") String listName) throws UnknownUser, UnknownList {
         UserApiContext user = getRegistered(getUserEmail(principal, model), model);
-        user.lists.deleteList(user.lists.getList(listName));
+        lists.deleteList(lists.getList(listName));
         return new RedirectView("/lists");
     }
 
@@ -133,7 +137,7 @@ public class WebUiController {
     ) throws UnknownUser, UnknownList {
 
         UserApiContext user = getRegistered(getUserEmail(principal, model), model);
-        ListApiContext list = new ListApiContext(user, user.lists.getList(listName));
+        ListApiContext list = listFactory.getList(listName);
 
         model.addAttribute("list", list);
         model.addAttribute("offset", offset);
@@ -150,14 +154,10 @@ public class WebUiController {
 
         // find public or non-hidden lists with this in the name
         UserApiContext user = getRegistered(getUserEmail(principal, model), model);
-        ArrayList<String> listNames = user.lists.findList(name);
+        ArrayList<String> listNames = lists.findList(name);
         ArrayList<ListApiContext> lists = new ArrayList();
         for(String listName: listNames) {
-            long listId = user.lists.getList(listName);
-            long ownerId = user.lists.getOwner(listId);
-            String ownerEmail = user.users.getEmail(ownerId);
-            UserApiContext owner = userFactory.getUserByEmail(ownerEmail);
-            ListApiContext foundList = new ListApiContext(owner, user.lists.getList(listName));
+            ListApiContext foundList = listFactory.getList(listName);
             foundList.setViewer(user);
             if (foundList.getViewerCanSubscribe()) {
                 lists.add(foundList);
@@ -174,8 +174,8 @@ public class WebUiController {
                            @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset
     ) throws UnknownUser, UnknownList {
 
-        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
-        ListApiContext list = new ListApiContext(user, user.lists.getList(listName));
+        getRegistered(getUserEmail(principal, model), model);
+        ListApiContext list = listFactory.getList(listName);
 
         model.addAttribute("list", list);
 
@@ -194,27 +194,37 @@ public class WebUiController {
         return "subscribers";
     }
 
-    @RequestMapping(value = "/list/{listName}/subscribe", method = RequestMethod.GET)
-    public RedirectView requestSubscription(Principal principal, Model model,
-                                  @PathVariable("listName") String listName,
-                                  @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset
-    ) throws UnknownUser, UnknownList {
+    @RequestMapping(value = "/list/{listName}/unsubscribe", method = RequestMethod.GET)
+    public RedirectView requestRemoveSubscription(Principal principal, Model model,
+                                            @PathVariable("listName") String listName)
+            throws UnknownUser, UnknownList {
 
         UserApiContext user = getRegistered(getUserEmail(principal, model), model);
-        long listId = user.lists.getList(listName);
-        long listOwner = listData.getOwner(listId);
-        UserApiContext owner = userFactory.getUserById(listOwner);
-        ListApiContext list = new ListApiContext(owner, listId);
-        List<UserApiContext> admins = list.getAdmins();
+        ListApiContext list = listFactory.getList(listName);
+
+        ListSubscription subscriberState = list.getSubscriberState(user);
+        if (subscriberState != ListSubscription.BLOCKED) {
+            lists.updateListAccess(list.listId, user.userId, ListSubscription.FORGET);
+        }
+
+        return new RedirectView("/profile");
+    }
+
+    @RequestMapping(value = "/list/{listName}/subscribe", method = RequestMethod.GET)
+    public RedirectView requestSubscription(Principal principal, Model model,
+                                  @PathVariable("listName") String listName)
+            throws UnknownUser, UnknownList {
+        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        ListApiContext list = listFactory.getList(listName);
 
         if (list.canModify(user)) {
             // we are an admin, subscribe ourself
-            user.lists.updateListAccess(list.listId, user.userId, ListSubscription.SUBSCRIBED);
+            lists.updateListAccess(list.listId, user.userId, ListSubscription.SUBSCRIBED);
         } else {
             // if we are not blocked or subscribed, add to pending
             ListSubscription subscriberState = list.getSubscriberState(user);
             if (subscriberState == ListSubscription.UNKNOWN) {
-                user.lists.updateListAccess(list.listId, user.userId, ListSubscription.REQUESTED);
+                lists.updateListAccess(list.listId, user.userId, ListSubscription.REQUESTED);
             }
         }
 
@@ -229,7 +239,7 @@ public class WebUiController {
         UserApiContext user = getRegistered(getUserEmail(principal, model), model);
         String newname = Sanitizer.listName(update.getName());
 
-        ListApiContext list = new ListApiContext(user, user.lists.getList(listName));
+        ListApiContext list = listFactory.getList(listName);
 
         list.setHidden(user, update.getHidden());
         // hidden lists arent public
@@ -254,7 +264,7 @@ public class WebUiController {
         String cmdr = Sanitizer.cmdrName(entry.getCmdr());
         String hostility = Sanitizer.hostility(entry.getHostility());
 
-        ListApiContext list = new ListApiContext(user, user.lists.getList(listName));
+        ListApiContext list = listFactory.getList(listName);
         list.addCmdr(user, cmdr, hostility);
 
         return new RedirectView("/list/" + listName);
@@ -267,7 +277,7 @@ public class WebUiController {
     ) throws UnknownUser, UnknownList, NameExists {
         UserApiContext user = getRegistered(getUserEmail(principal, model), model);
         String cmdr = Sanitizer.cmdrName(entry.getCmdr());
-        ListApiContext list = new ListApiContext(user, user.lists.getList(listName));
+        ListApiContext list = listFactory.getList(listName);
         list.delCmdr(user, cmdr);
 
         return new RedirectView("/list/" + listName);
@@ -304,11 +314,11 @@ public class WebUiController {
             }
 
             if (checkPublic) {
-                ArrayList<String> publicLists = listData.publicLists();
+                ArrayList<String> publicLists = lists.publicLists();
                 for (String listName : publicLists) {
-                    long listId = listData.getList(listName);
-                    long listOwner = listData.getOwner(listId);
-                    ListApiContext listContext = new ListApiContext(userFactory.getUserByEmail(users.getEmail(listOwner)), listId);
+                    long listId = lists.getList(listName);
+                    long listOwner = lists.getOwner(listId);
+                    ListApiContext listContext = listFactory.getList(listName);
                     checkLists.add(listContext);
                 }
             }
@@ -345,19 +355,14 @@ public class WebUiController {
             UserApiContext user = getUserContext(email);
             model.addAttribute("apikey", user.getApiKey());
 
-            ArrayList<ListApiContext> active = ListApiContext.getLists(
-                    userFactory, listData, users.getActiveSubscriptions(user.userId));
+            ArrayList<ListApiContext> active = listFactory.getLists(users.getActiveSubscriptions(user.userId));
             model.addAttribute("active", active);
 
 
-            ArrayList<ListApiContext> subscribed = ListApiContext.getLists(
-                    userFactory, listData,
-                    listData.getUserAccessList(user.userId, ListSubscription.SUBSCRIBED));
+            ArrayList<ListApiContext> subscribed = listFactory.getLists(lists.getUserAccessList(user.userId, ListSubscription.SUBSCRIBED));
             model.addAttribute("subscribed", subscribed);
 
-            ArrayList<ListApiContext> pending = ListApiContext.getLists(
-                    userFactory, listData,
-                    listData.getUserAccessList(user.userId, ListSubscription.REQUESTED));
+            ArrayList<ListApiContext> pending = listFactory.getLists(lists.getUserAccessList(user.userId, ListSubscription.REQUESTED));
             model.addAttribute("pending", pending);
 
             return "profile";

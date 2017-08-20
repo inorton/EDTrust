@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head th:replace="fragments/header :: head"></head>
+    <body>
+        <nav th:replace="fragments/header :: navbar"></nav>
+
+        <div class="container theme-showcase" role="main">
+            <div class="page-header">
+                <h1>Profile</h1>
+
+                Hi <span th:text="${userFullName}"></span>, this is your profile page.
+                <p>
+                Your EDMC ED:Trust API Key is:
+                </p>
+                <div>
+                    <input class="form-control" type="text" th:value="${apikey}"/>
+                </div>
+            </div>
+            <h1> Subscriptions</h1>
+
+            <h4>Active Subscriptions</h4>
+
+
+            <h4>Pending Subscription Requests:</h4>
+
+            <ul th:each="list: ${pending}">
+                <li th:text="${list.name}"></li>
+            </ul>
+
+            <h4>Approved Subscription Requests:</h4>
+
+            <ul th:each="list: ${subscribed}">
+                <li th:text="${list.name}"></li>
+            </ul>
+
+        </div>
+
+    </body>
+</html>

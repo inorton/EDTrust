@@ -5,6 +5,20 @@ package space.edhits.edtrust;
  */
 public class UserApiContextFactory {
 
+    private ListApiContextFactory listFactory;
+
+    public ListApiContextFactory getListFactory() {
+        return listFactory;
+    }
+
+    public void setListFactory(ListApiContextFactory listFactory) {
+        this.listFactory = listFactory;
+    }
+
+    public ApiKeyResolver getResolver() {
+        return resolver;
+    }
+
     final ApiKeyResolver resolver;
 
     public UserApiContextFactory(ApiKeyResolver resolver) {

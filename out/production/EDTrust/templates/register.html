@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head th:replace="fragments/header :: head"></head>
+    <body>
+        <nav th:replace="fragments/header :: navbar"></nav>
+
+        <div class="container theme-showcase" role="main">
+            <div class="page-header">
+                <h1>Register for ED:Verify</h1>
+                <p>
+                    Hello <span th:text="${userFullName}"></span>
+                </p>
+                <p>
+                    Welcome to ED:Verify. You have been authenticated by Google but do not yet have a ED:Verify account. You simply need to click the Register button below and it's all done for you.
+                </p>
+                <p>
+                    <a href="/confirm-register" class="btn btn-primary">Register</a>
+                </p>
+            </div>
+        </div>
+    </body>
+</html>
