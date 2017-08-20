@@ -26,6 +26,9 @@ public class UserApiContext {
         return users;
     }
 
+    public String getEmail() throws UnknownUser {
+        return users.getEmail(this.userId);
+    }
 
     public String getApiKey() {
         return this.users.getApiKey(this.userId);

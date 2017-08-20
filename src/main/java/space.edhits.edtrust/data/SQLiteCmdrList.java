@@ -367,12 +367,13 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
             try (Connection writer = getWriteConnection()) {
                 String sql = new StringBuilder()
                         .append("INSERT INTO cmdrListInfo ")
-                        .append(" (owner, public, name) ")
-                        .append(" VALUES( ?, ?, ?)").toString();
+                        .append(" (owner, public, hidden, name) ")
+                        .append(" VALUES( ?, ?, ?, ?)").toString();
                 PreparedStatement sth = writer.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                 sth.setLong(1, owner);
                 sth.setBoolean(2, false);
-                sth.setString(3, name);
+                sth.setBoolean(3, false);
+                sth.setString(4, name);
                 sth.execute();
                 ResultSet generatedKeys = sth.getGeneratedKeys();
                 writer.commit();

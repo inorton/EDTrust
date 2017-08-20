@@ -23,15 +23,29 @@
 
             <h4>Pending Subscription Requests:</h4>
 
-            <ul th:each="list: ${pending}">
-                <li th:text="${list.name}"></li>
-            </ul>
+            <table th:each="list: ${pending}" class="table table-hover">
+                <tr>
+                    <td th:text="${list.name}"></td>
+                    <td align="right">
+                        <a th:href="@{/list/{name}/unsubscribe(name=${list.name})}">
+                            Cancel Subscribtion Request
+                        </a>
+                    </td>
+                </tr>
+            </table>
 
             <h4>Approved Subscription Requests:</h4>
 
-            <ul th:each="list: ${subscribed}">
-                <li th:text="${list.name}"></li>
-            </ul>
+            <table th:each="list: ${subscribed}" class="table table-hover">
+                <tr>
+                    <td th:text="${list.name}"></td>
+                    <td align="right">
+                        <a th:href="@{/list/{name}/unsubscribe(name=${list.name})}">
+                            Cancel Subscription
+                        </a>
+                    </td>
+                </tr>
+            </table>
 
         </div>
 

@@ -183,7 +183,7 @@ public class WebUiController {
         model.addAttribute("admins", admins);
 
         List<UserApiContext> pending = list.getPending();
-        model.addAttribute("pendingSubscribers", pending);
+        model.addAttribute("pending", pending);
 
         List<UserApiContext> subscribers = list.getSubscribers();
         model.addAttribute("subscribers", subscribers);
