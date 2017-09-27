@@ -1,12 +1,14 @@
 package space.edhits.edtrust;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 import space.edhits.edtrust.data.CmdrList;
+import space.edhits.edtrust.data.CompletionResponse;
 import space.edhits.edtrust.data.ListSubscription;
 import space.edhits.edtrust.data.UserProfileData;
 
@@ -59,6 +61,11 @@ public class WebUiController {
         return userFactory.getUserByEmail(email);
     }
 
+    UserApiContext getRegistered(Principal principal, Model model) throws UnknownList, UnknownUser {
+        String userEmail = getUserEmail(principal, model);
+        return this.getRegistered(userEmail, model);
+    }
+    
     UserApiContext getRegistered(String email, Model model) throws UnknownUser, UnknownList {
         if (email == null) throw new UnknownUser();
 
@@ -101,7 +108,7 @@ public class WebUiController {
     @RequestMapping(value = "/lists", method = RequestMethod.POST)
     public String listsCreate(Principal principal, Model model,
                               @RequestParam(value = "newListName", required = true) String newName) throws UnknownUser, UnknownList {
-        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        UserApiContext user = getRegistered(principal, model);
         newName = Sanitizer.listName(newName);
 
         if (!user.admin) {
@@ -117,7 +124,7 @@ public class WebUiController {
             addUserError(model, "that name is not allowed or already exists.");
         }
         // refresh the list values
-        getRegistered(getUserEmail(principal, model), model);
+        getRegistered(principal, model);
 
         return "lists";
     }
@@ -125,7 +132,7 @@ public class WebUiController {
     @RequestMapping(value = "/list/{listName}/delete", method = RequestMethod.POST)
     public RedirectView deleteList(Principal principal, Model model,
                                    @PathVariable("listName") String listName) throws UnknownUser, UnknownList {
-        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        UserApiContext user = getRegistered(principal, model);
         lists.deleteList(lists.getList(listName));
         return new RedirectView("/lists");
     }
@@ -136,7 +143,7 @@ public class WebUiController {
                            @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset
     ) throws UnknownUser, UnknownList {
 
-        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        UserApiContext user = getRegistered(principal, model);
         ListApiContext list = listFactory.getList(listName);
 
         model.addAttribute("list", list);
@@ -153,7 +160,7 @@ public class WebUiController {
                                  @RequestParam(value = "contains", required = false) String name) throws UnknownList, UnknownUser {
 
         // find public or non-hidden lists with this in the name
-        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        UserApiContext user = getRegistered(principal, model);
         ArrayList<String> listNames = lists.findList(name);
         ArrayList<ListApiContext> lists = new ArrayList();
         for(String listName: listNames) {
@@ -174,56 +181,106 @@ public class WebUiController {
                            @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset
     ) throws UnknownUser, UnknownList {
 
-        getRegistered(getUserEmail(principal, model), model);
+        getRegistered(principal, model);
         ListApiContext list = listFactory.getList(listName);
 
         model.addAttribute("list", list);
 
         List<UserApiContext> admins = list.getAdmins();
+        admins.add(list.owner);
         model.addAttribute("admins", admins);
 
         List<UserApiContext> pending = list.getPending();
         model.addAttribute("pending", pending);
 
         List<UserApiContext> subscribers = list.getSubscribers();
+        subscribers.add(list.owner);
+        for (UserApiContext subuser : subscribers) {
+            subuser.currentListAdmin = list.isListAdmin(subuser);
+        }
         model.addAttribute("subscribers", subscribers);
 
-        List<UserApiContext> blcoked = list.getBlocked();
-        model.addAttribute("blocked", blcoked);
+        List<UserApiContext> blocked = list.getBlocked();
+        model.addAttribute("blocked", blocked);
 
         return "subscribers";
     }
 
-    @RequestMapping(value = "/list/{listName}/removeSubscriber", method = RequestMethod.POST)
-    public RedirectView removeSubscriber(Principal principal, Model model,
+    @RequestMapping(value = "/list/{listName}/removeSubscriber", method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody()
+    public CompletionResponse removeSubscriber(Principal principal, Model model,
                                          @PathVariable("listName") String listName,
                                          @RequestBody UserRequest remove) throws UnknownList, UnknownUser {
-        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        UserApiContext user = getRegistered(principal, model);
         modifyListSubscriber(user, listName, remove, ListSubscription.FORGET);
 
-        return new RedirectView("/list/" + listName + "/subscribers");
+        return new CompletionResponse(true);
     }
 
-    @RequestMapping(value = "/list/{listName}/blockSubscriber", method = RequestMethod.POST)
-    public RedirectView blockSubscriber(Principal principal, Model model,
-                                         @PathVariable("listName") String listName,
-                                         @RequestBody UserRequest remove) throws UnknownList, UnknownUser {
-        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
-        modifyListSubscriber(user, listName, remove, ListSubscription.BLOCKED);
+    @RequestMapping(value = "/list/{listName}/promoteSubscriber", method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody()
+    public CompletionResponse promoteSubscriber(Principal principal, Model model,
+                                                @PathVariable("listName") String listName,
+                                                @RequestBody UserRequest remove) throws UnknownList, UnknownUser {
+        UserApiContext user = getRegistered(principal, model);
+        modifyListSubscriber(user, listName, remove, ListSubscription.ADMIN);
 
-        return new RedirectView("/list/" + listName + "/subscribers");
+        return new CompletionResponse(true);
+    }
+
+    @RequestMapping(value = "/list/{listName}/demoteSubscriber", method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody()
+    public CompletionResponse demoteSubscriber(Principal principal, Model model,
+                                          @PathVariable("listName") String listName,
+                                          @RequestBody UserRequest remove) throws UnknownList, UnknownUser {
+        UserApiContext user = getRegistered(principal, model);
+        modifyListSubscriber(user, listName, remove, ListSubscription.SUBSCRIBED);
+        return new CompletionResponse(true);
+    }
+
+    @RequestMapping(value = "/list/{listName}/blockSubscriber", method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody()
+    public CompletionResponse blockSubscriber(Principal principal, Model model,
+                                         @PathVariable("listName") String listName,
+                                         @RequestBody UserRequest block) throws UnknownList, UnknownUser {
+        UserApiContext user = getRegistered(principal, model);
+        modifyListSubscriber(user, listName, block, ListSubscription.BLOCKED);
+        return new CompletionResponse(true);
+    }
+
+    @RequestMapping(value = "/list/{listName}/addSubscriber", method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody()
+    public CompletionResponse addSubscriber(Principal principal, Model model,
+                                        @PathVariable("listName") String listName,
+                                        @RequestBody UserRequest newuser) throws UnknownList, UnknownUser {
+        UserApiContext user = getRegistered(principal, model);
+        modifyListSubscriber(user, listName, newuser, ListSubscription.SUBSCRIBED);
+
+        return new CompletionResponse(true);
     }
 
     void modifyListSubscriber(UserApiContext user,
                               String listName,
-                              UserRequest remove,
+                              UserRequest subject,
                               ListSubscription op
                               ) throws UnknownUser, UnknownList {
         ListApiContext list = listFactory.getList(listName);
-
-        if (list.isListAdmin(user)) {
-            long removeId = users.getId(remove.email);
-            user.lists.updateListAccess(list.listId, removeId, op);
+        long subjectId = users.getId(subject.email);
+        if (subjectId != list.owner.userId) {
+            if (list.isListAdmin(user) || user.admin) {
+                if (op == ListSubscription.ADMIN) {
+                    user.lists.setAdmin(list.listId, subjectId, true);
+                    user.lists.updateListAccess(list.listId, subjectId, ListSubscription.SUBSCRIBED);
+                } else {
+                    user.lists.updateListAccess(list.listId, subjectId, op);
+                    user.lists.setAdmin(list.listId, subjectId, false);
+                }
+            }
         }
     }
 
@@ -232,7 +289,7 @@ public class WebUiController {
                                             @PathVariable("listName") String listName)
             throws UnknownUser, UnknownList {
 
-        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        UserApiContext user = getRegistered(principal, model);
         ListApiContext list = listFactory.getList(listName);
 
         ListSubscription subscriberState = list.getSubscriberState(user);
@@ -247,7 +304,7 @@ public class WebUiController {
     public RedirectView requestSubscription(Principal principal, Model model,
                                   @PathVariable("listName") String listName)
             throws UnknownUser, UnknownList {
-        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        UserApiContext user = getRegistered(principal, model);
         ListApiContext list = listFactory.getList(listName);
 
         if (list.canModify(user)) {
@@ -269,7 +326,7 @@ public class WebUiController {
                                    @PathVariable("listName") String listName,
                                    @ModelAttribute ListUpdateRequest update
     ) throws UnknownUser, UnknownList, NameExists {
-        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        UserApiContext user = getRegistered(principal, model);
         String newname = Sanitizer.listName(update.getName());
 
         ListApiContext list = listFactory.getList(listName);
@@ -293,7 +350,7 @@ public class WebUiController {
                                       @PathVariable("listName") String listName,
                                       @ModelAttribute ListEntryRequest entry
     ) throws UnknownUser, UnknownList, NameExists {
-        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        UserApiContext user = getRegistered(principal, model);
         String cmdr = Sanitizer.cmdrName(entry.getCmdr());
         String hostility = Sanitizer.hostility(entry.getHostility());
 
@@ -308,7 +365,7 @@ public class WebUiController {
                                       @PathVariable("listName") String listName,
                                       @ModelAttribute ListEntryRequest entry
     ) throws UnknownUser, UnknownList, NameExists {
-        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        UserApiContext user = getRegistered(principal, model);
         String cmdr = Sanitizer.cmdrName(entry.getCmdr());
         ListApiContext list = listFactory.getList(listName);
         list.delCmdr(user, cmdr);

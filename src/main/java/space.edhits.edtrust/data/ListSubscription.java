@@ -6,4 +6,5 @@ public enum ListSubscription {
     SUBSCRIBED,
     REQUESTED,
     FORGET,
+    ADMIN,
 }

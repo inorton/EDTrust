@@ -17,6 +17,15 @@ public class UserApiContext {
 
     long userId = 0;
     boolean admin = false;
+    boolean currentListAdmin = false;
+
+    public long getUserId() {
+        return userId;
+    }
+
+    public boolean isCurrentListAdmin() {
+        return currentListAdmin;
+    }
 
     public boolean getAdmin() {
         return admin;

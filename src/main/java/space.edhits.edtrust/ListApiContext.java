@@ -3,7 +3,9 @@ package space.edhits.edtrust;
 import space.edhits.edtrust.data.ListSubscription;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by inb on 01/08/2017.
@@ -17,7 +19,7 @@ public class ListApiContext {
     final ListApiContextFactory factory;
     String name;
     boolean isPublic;
-
+    Map<Long, UserApiContext> admins;
     UserApiContext owner;
 
     public ListApiContext(ListApiContextFactory factory, UserApiContext owner, long listId) {
@@ -26,6 +28,21 @@ public class ListApiContext {
         this.isPublic = isPublic;
         this.listId = listId;
         this.factory = factory;
+    }
+
+    private Map<Long, UserApiContext> getAdminMap() {
+        if (this.admins == null) {
+            Map<Long, UserApiContext> found = new HashMap<>();
+            try {
+                for (UserApiContext admin : getUserContexts(factory.getLists().getAdmins(this.listId))) {
+                    found.put(admin.userId, admin);
+                }
+            } catch (UnknownUser unknownUser) {
+                // this doesnt happen
+            }
+            this.admins = found;
+        }
+        return this.admins;
     }
 
     public UserApiContext getViewer() {
@@ -83,7 +100,7 @@ public class ListApiContext {
     }
 
     public List<UserApiContext> getAdmins() throws UnknownUser {
-        return getUserContexts(factory.getLists().getAdmins(this.listId));
+        return new ArrayList<>(this.getAdminMap().values());
     }
 
     public List<UserApiContext> getPending() throws UnknownUser {
@@ -116,13 +133,7 @@ public class ListApiContext {
             return true;
         }
 
-        List<UserApiContext> admins = this.getAdmins();
-        for (UserApiContext admin : admins) {
-            if (admin.userId == user.userId) {
-                return true;
-            }
-        }
-        return false;
+        return admins.containsKey((Long)user.userId);
     }
 
     boolean canModify(UserApiContext user) throws UnknownUser {

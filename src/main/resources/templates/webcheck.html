@@ -8,16 +8,13 @@
             <div class="page-header">
                 <h1>Check CMDR</h1>
                 <form method="get" action="/webcheck">
+                    <p>
+                        Check your subscribed lists for a CMDR name.
+                    </p>
                     <div class="form-group">
                         <label for="cmdr" class="col-sm-2 control-label">CMDR</label>
                         <div class="col-sm-10">
                             <input type="text" class="form-control" name="cmdr" id="cmdr" placeholder="Check CMDR Name"/>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="listPublic" class="col-sm-2 control-label">Check Public Lists</label>
-                        <div class="col-sm-10">
-                            <input type="checkbox" id="listPublic" name="public" checked="checked"/> - If ticked also search lists marked as "public"
                         </div>
                     </div>
                     <button class="btn" type="submit">Check</button>

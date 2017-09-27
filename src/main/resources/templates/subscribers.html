@@ -12,6 +12,7 @@
                 <script th:inline="javascript">
                     /*<![CDATA[*/
                     var csrf_header = /*[[${_csrf}]]*/ "_csrf";
+                    var listName = /*[[${list.name}]]*/ "listName";
 
                     $(function () {
                         var header = csrf_header.headerName;
@@ -28,16 +29,15 @@
                                 type: "POST",
                                 url: url,
                                 data: data,
-                                success: function (data) {
-                                    window.location.reload();
-                                },
                                 dataType: "json",
                                 contentType: "application/json"
-                            });
+                            }).done(function () {
+                                window.location.reload();
+                            }) ;
                         }
                     }
 
-                    function blockSub(listName, userEmail) {
+                    function blockSub(userEmail) {
 
                         data = JSON.stringify({
                             "email": userEmail
@@ -48,7 +48,7 @@
                             data);
                     }
 
-                    function removeSub(listName, userEmail) {
+                    function removeSub(userEmail) {
                         data = JSON.stringify({
                             "email": userEmail
                         });
@@ -58,26 +58,141 @@
                             data);
                     }
 
+                    function addSubInput() {
+                        var userEmail = $("#addsubemail").val()
+                        addSub(userEmail);
+                    }
+
+                    function addSub(userEmail) {
+                        data = JSON.stringify({
+                            "email": userEmail,
+                        });
+
+                        confirmPost("Add Subscriber " + userEmail,
+                            "/list/" + listName + "/addSubscriber",
+                            data);
+                    }
+
+                    function adminSub(userEmail) {
+                        data = JSON.stringify({
+                            "email": userEmail,
+                        });
+
+                        confirmPost("Make Subscriber into Admin: " + userEmail,
+                            "/list/" + listName + "/promoteSubscriber",
+                            data);
+                    }
+
+                    function demoteSub(userEmail) {
+                        data = JSON.stringify({
+                            "email": userEmail,
+                        });
+
+                        confirmPost("Make Remove Admin from: " + userEmail,
+                            "/list/" + listName + "/demoteSubscriber",
+                            data);
+                    }
+
                     /*]]>*/
                 </script>
+
 
                 <table class="table table-striped table-hover">
                     <tr>
                         <th>Subscriber Requests</th>
+                        <th>
+                            <input type="text" id="addsubemail"/>
+                            <button onmouseup="addSubInput()">
+                                <span class="glyphicon glyphicon-plus"></span>
+                            </button>
+                        </th>
                     </tr>
                     <tr th:each="subUser: ${pending}">
                         <td align="left">
                             <span th:text="${subUser.email}"></span>
                         </td>
                         <td align="right">
-                            <button th:onmouseup="'return removeSub(\'' + ${list.name} + '\', \''+ ${subUser.email} +'\')'" class="btn btn-danger" type="submit">
+                            <span th:unless="${list.owner.userId == subUser.userId}">
+                                <button th:onmouseup="'return removeSub(\''+ ${subUser.email} +'\')'" class="btn btn-danger" type="submit">
+                                    <span class="glyphicon glyphicon-remove-circle"></span>
+                                </button>
+
+                                <button th:onmouseup="'return blockSub(\''+ ${subUser.email} +'\')'" class="btn btn-danger" type="submit">
+                                    <span class="glyphicon glyphicon-ban-circle"></span>
+                                </button>
+                            </span>
+
+                            <button th:onmouseup="'return addSub(\''+ ${subUser.email} +'\')'" class="btn btn-danger" type="submit">
+                                <span class="glyphicon glyphicon-check"></span>
+                            </button>
+
+                        </td>
+                    </tr>
+                </table>
+
+                <table class="table table-striped table-hover">
+                    <tr>
+                        <th>Subscribers</th>
+                    </tr>
+                    <tr th:each="subUser: ${subscribers}">
+                        <td align="left">
+                            <span th:text="${subUser.email}"></span>
+                        </td>
+                        <td align="right">
+                            <span th:if="${list.owner.userId == subUser.userId}">
+                                Owner
+                            </span>
+                            <span th:unless="${list.owner.userId == subUser.userId}">
+                                <button th:unless="${subUser.currentListAdmin}"
+                                        th:onmouseup="'return adminSub(\''+ ${subUser.email} +'\')'" class="btn btn-success" type="submit">
+                                    <span class="glyphicon glyphicon-sunglasses"></span>
+                                </button>
+
+                                <button th:onmouseup="'return removeSub(\''+ ${subUser.email} +'\')'" class="btn btn-danger" type="submit">
+                                    <span class="glyphicon glyphicon-remove-circle"></span>
+                                </button>
+
+                                <button th:onmouseup="'return blockSub(\''+ ${subUser.email} +'\')'" class="btn btn-danger" type="submit">
+                                    <span class="glyphicon glyphicon-ban-circle"></span>
+                                </button>
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+
+                <table class="table table-striped table-hover">
+                    <tr>
+                        <th>Blocked</th>
+                    </tr>
+                    <tr th:each="subUser: ${blocked}">
+                        <td align="left">
+                            <span th:text="${subUser.email}"></span>
+                        </td>
+                        <td align="right">
+                            <button th:onmouseup="'return removeSub(\''+ ${subUser.email} +'\')'" class="btn btn-danger" type="submit">
                                 <span class="glyphicon glyphicon-remove-circle"></span>
                             </button>
+                        </td>
+                    </tr>
+                </table>
 
-                            <button th:onmouseup="'return blockSub(\'' + ${list.name} + '\', \''+ ${subUser.email} +'\')'" class="btn btn-danger" type="submit">
-                                <span class="glyphicon glyphicon-ban-circle"></span>
-                            </button>
-
+                <table class="table table-striped table-hover">
+                    <tr>
+                        <th>Admin Users</th>
+                    </tr>
+                    <tr th:each="subUser: ${admins}">
+                        <td align="left">
+                            <span th:text="${subUser.email}"></span>
+                        </td>
+                        <td align="right">
+                            <span th:if="${list.owner.userId == subUser.userId}">
+                                Owner
+                            </span>
+                            <span th:unless="${list.owner.userId == subUser.userId}">
+                                <button th:onmouseup="'return demoteSub(\''+ ${subUser.email} +'\')'" class="btn btn-warning" type="submit">
+                                    <span class="glyphicon glyphicon-sunglasses"></span>
+                                </button>
+                            </span>
                         </td>
                     </tr>
                 </table>
