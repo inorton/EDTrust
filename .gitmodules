@@ -1,0 +1,3 @@
+[submodule "secrets"]
+	path = secrets
+	url = ssh://edmc.edhits.space/home/inb/edverify-secrets
