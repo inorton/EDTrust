@@ -11,17 +11,51 @@
 
                 <script th:inline="javascript">
                     /*<![CDATA[*/
-                    var csrf_token = /*[[${_csrf.token}]]*/ "token";
+                    var csrf_header = /*[[${_csrf}]]*/ "_csrf";
+
+                    $(function () {
+                        var header = csrf_header.headerName;
+                        var token = csrf_header.token;
+                        $(document).ajaxSend(function(e, xhr, options) {
+                            xhr.setRequestHeader(header, token);
+                        });
+                    });
+
+                    function confirmPost(msg, url, data) {
+                        if (confirm(msg)) {
+
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                data: data,
+                                success: function (data) {
+                                    window.location.reload();
+                                },
+                                dataType: "json",
+                                contentType: "application/json"
+                            });
+                        }
+                    }
+
+                    function blockSub(listName, userEmail) {
+
+                        data = JSON.stringify({
+                            "email": userEmail
+                        });
+
+                        confirmPost("Block Subscriber " + userEmail,
+                            "/list/" + listName + "/blockSubscriber",
+                            data);
+                    }
 
                     function removeSub(listName, userEmail) {
-                        $.post("/list/" + listName + "/removeSubscriber",
-                            {
-                                "user": userEmail,
-                                _csrf : csrf_token,
-                            },
-                        function (data) {
-                            window.location.reload();
-                        })
+                        data = JSON.stringify({
+                            "email": userEmail
+                        });
+
+                        confirmPost("Remove Subscriber " + userEmail,
+                            "/list/" + listName + "/removeSubscriber",
+                            data);
                     }
 
                     /*]]>*/
@@ -40,30 +74,10 @@
                                 <span class="glyphicon glyphicon-remove-circle"></span>
                             </button>
 
-                            <form th:onsubmit="'return confirm(\'Remove ' + ${subUser.email} + ' ?\')'"
-                                  class="form-inline" method="post" th:action="@{/list/{name}/removeSubscriber(name=${list.name})}">
-                                <input type="hidden"
-                                       th:name="${_csrf.parameterName}"
-                                       th:value="${_csrf.token}" />
-                                <input type="hidden"
-                                       name="user"
-                                       th:value="${subUser.email}" />
-                                <button class="btn btn-danger" type="submit">
-                                    <span class="glyphicon glyphicon-remove-circle"></span>
-                                </button>
-                            </form>
-                            <form th:onsubmit="'return confirm(\'Block ' + ${subUser.email} + ' ?\')'"
-                                  class="form-inline" method="post" th:action="@{/list/{name}/blockSubscriber(name=${list.name})}">
-                                <input type="hidden"
-                                       th:name="${_csrf.parameterName}"
-                                       th:value="${_csrf.token}" />
-                                <input type="hidden"
-                                       name="user"
-                                       th:value="${subUser.email}" />
-                                <button class="btn btn-danger" type="submit">
-                                    <span class="glyphicon glyphicon-ban-circle"></span>
-                                </button>
-                            </form>
+                            <button th:onmouseup="'return blockSub(\'' + ${list.name} + '\', \''+ ${subUser.email} +'\')'" class="btn btn-danger" type="submit">
+                                <span class="glyphicon glyphicon-ban-circle"></span>
+                            </button>
+
                         </td>
                     </tr>
                 </table>

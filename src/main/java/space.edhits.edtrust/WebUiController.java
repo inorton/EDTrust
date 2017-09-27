@@ -194,6 +194,39 @@ public class WebUiController {
         return "subscribers";
     }
 
+    @RequestMapping(value = "/list/{listName}/removeSubscriber", method = RequestMethod.POST)
+    public RedirectView removeSubscriber(Principal principal, Model model,
+                                         @PathVariable("listName") String listName,
+                                         @RequestBody UserRequest remove) throws UnknownList, UnknownUser {
+        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        modifyListSubscriber(user, listName, remove, ListSubscription.FORGET);
+
+        return new RedirectView("/list/" + listName + "/subscribers");
+    }
+
+    @RequestMapping(value = "/list/{listName}/blockSubscriber", method = RequestMethod.POST)
+    public RedirectView blockSubscriber(Principal principal, Model model,
+                                         @PathVariable("listName") String listName,
+                                         @RequestBody UserRequest remove) throws UnknownList, UnknownUser {
+        UserApiContext user = getRegistered(getUserEmail(principal, model), model);
+        modifyListSubscriber(user, listName, remove, ListSubscription.BLOCKED);
+
+        return new RedirectView("/list/" + listName + "/subscribers");
+    }
+
+    void modifyListSubscriber(UserApiContext user,
+                              String listName,
+                              UserRequest remove,
+                              ListSubscription op
+                              ) throws UnknownUser, UnknownList {
+        ListApiContext list = listFactory.getList(listName);
+
+        if (list.isListAdmin(user)) {
+            long removeId = users.getId(remove.email);
+            user.lists.updateListAccess(list.listId, removeId, op);
+        }
+    }
+
     @RequestMapping(value = "/list/{listName}/unsubscribe", method = RequestMethod.GET)
     public RedirectView requestRemoveSubscription(Principal principal, Model model,
                                             @PathVariable("listName") String listName)
