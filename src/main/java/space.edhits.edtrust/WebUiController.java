@@ -73,6 +73,7 @@ public class WebUiController {
         model.addAttribute("user", user);
         model.addAttribute("registered", true);
         model.addAttribute("ownedLists", user.getOwnedLists());
+        model.addAttribute( "managedLists", user.getAdminLists());
         return user;
     }
 
@@ -401,6 +402,9 @@ public class WebUiController {
                 // check against a user's lists
                 ArrayList<ListApiContext> ownedLists = user.getOwnedLists();
                 checkLists.addAll(ownedLists);
+
+                ArrayList<ListApiContext> subscribed = listFactory.getLists(lists.getUserAccessList(user.userId, ListSubscription.SUBSCRIBED));
+                checkLists.addAll(subscribed);
             }
 
             if (checkPublic) {

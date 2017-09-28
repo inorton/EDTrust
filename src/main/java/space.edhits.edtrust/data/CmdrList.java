@@ -12,6 +12,7 @@ import java.util.ArrayList;
 public interface CmdrList extends Closeable {
 
     ArrayList<String> lists(long ownerId);
+    ArrayList<String> listsManaged(long managerId);
     ArrayList<String> publicLists();
 
     long getList(String name) throws UnknownList;

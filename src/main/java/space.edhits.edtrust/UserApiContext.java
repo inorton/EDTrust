@@ -59,9 +59,19 @@ public class UserApiContext {
         for (String listName :  lists.lists(this.userId)) {
             owned.add(factory.getListFactory().getList(listName));
         }
-
         return owned;
     }
+
+    public ArrayList<ListApiContext> getAdminLists() throws UnknownList, UnknownUser {
+        ArrayList<String> names = lists.listsManaged(this.userId);
+        ArrayList<ListApiContext> found = new ArrayList<>();
+        for (String name: names) {
+            found.add(factory.getListFactory().getList(name));
+        }
+
+        return found;
+    }
+
 
     public ContactResponse check(String cmdr) throws UnknownList {
         ContactResponse contactResponse = new ContactResponse();

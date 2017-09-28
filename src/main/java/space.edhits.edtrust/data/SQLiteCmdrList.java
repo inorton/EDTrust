@@ -466,6 +466,32 @@ public class SQLiteCmdrList extends SQLiteDataSource implements CmdrList {
     }
 
     @Override
+    public ArrayList<String> listsManaged(long managerId)
+    {
+        ArrayList<String> lists = new ArrayList<>();
+        try {
+            try (PreparedStatement sth = connection.prepareStatement(
+                    "SELECT list FROM cmdrListAdmins " +
+                            " WHERE user == ?")) {
+                sth.setLong(1, managerId);
+                ResultSet resultSet = sth.executeQuery();
+
+                while (resultSet.next()) {
+                    long listId = resultSet.getLong(1);
+                    try {
+                        lists.add(this.getListName(listId));
+                    } catch (UnknownList unknownList) {
+                        // keep going, this might happen if a list is deleted but is not fatal
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return lists;
+    }
+
+    @Override
     public ArrayList<String> lists(long ownerId) {
         ArrayList<String> lists = new ArrayList<>();
         try {
