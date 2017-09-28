@@ -133,7 +133,7 @@ public class ListApiContext {
             return true;
         }
 
-        return admins.containsKey((Long)user.userId);
+        return this.getAdminMap().containsKey((Long)user.userId);
     }
 
     boolean canModify(UserApiContext user) throws UnknownUser {
