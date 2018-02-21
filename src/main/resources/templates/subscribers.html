@@ -33,6 +33,8 @@
                                 contentType: "application/json"
                             }).done(function () {
                                 window.location.reload();
+                            }).fail(function (xqr, status) {
+                                alert("could not complete request " + status)
                             }) ;
                         }
                     }
